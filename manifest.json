@@ -1,0 +1,16 @@
+{
+  "short_name": "Folia",
+  "name": "Folia — Personal Reading Tracker",
+  "icons": [
+    {
+      "src": "https://api.iconify.design/lucide:sprout.svg?color=%23b87333",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "./pages/dashboard.html",
+  "background_color": "#F8F9FA",
+  "theme_color": "#1A1A1A",
+  "display": "standalone",
+  "orientation": "portrait"
+}
