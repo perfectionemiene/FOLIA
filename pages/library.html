@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library — Folia</title>
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Library Specific Component Styles */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: var(--transition-smooth, all 0.2s ease);
+    }
+
+    .filter-btn.active, 
+    .filter-btn:hover {
+      background: var(--color-primary);
+      color: #FFF;
+      border-color: var(--color-primary);
+    }
+
+    /* Book Cards Grid */
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .book-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .book-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .book-cover {
+      width: 100%;
+      height: 220px;
+      background: var(--color-accent-soft, #f4ebe1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--color-accent);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    .book-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: var(--color-primary);
+    }
+
+    .book-author {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .book-status {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-reading { color: var(--color-accent); }
+    .status-completed { color: #4CAF50; }
+    .status-toread { color: var(--text-muted); }
+
+    /* Empty Library State Styling */
+    .empty-library-container {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 1.5rem;
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      margin-top: 1rem;
+    }
+
+    .empty-library-icon {
+      width: 56px;
+      height: 56px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    /* Mobile Responsive Breakpoints */
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.5rem; }
+      .books-grid { grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+      .book-cover { height: 160px; font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item active"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <div>
+          <h1>My Library</h1>
+          <p style="color: var(--text-muted); margin-top: 0.25rem;">Manage and organize your collection</p>
+        </div>
+        <a href="add-book.html" class="btn btn-primary" style="background: var(--color-primary); color: #fff;">
+          <i data-lucide="plus"></i> Add New Book
+        </a>
+      </header>
+
+      <!-- Filter Categories -->
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-btn active" data-filter="all">All Books</button>
+        <button class="filter-btn" data-filter="reading">Reading</button>
+        <button class="filter-btn" data-filter="completed">Completed</button>
+        <button class="filter-btn" data-filter="to-read">To Read</button>
+      </div>
+
+      <!-- Books Grid Dynamic Container -->
+      <section class="books-grid" id="booksGrid">
+        <!-- Rendered dynamically via JS (Active Books or Empty State) -->
+      </section>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    let activeFilter = 'all';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      renderLibrary();
+      initCategoryFilters();
+    });
+
+    // Mobile Navigation Drawer Toggle
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const openMenu = () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      };
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', openMenu);
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    // Dynamic Library Rendering
+    function renderLibrary() {
+      const booksGrid = document.getElementById('booksGrid');
+      if (!booksGrid) return;
+
+      const library = (typeof getLibrary === 'function') ? getLibrary() : JSON.parse(localStorage.getItem('folia_library')) || [];
+
+      // Filter books based on active selection
+      const filteredBooks = library.filter(book => {
+        if (activeFilter === 'all') return true;
+        return book.status === activeFilter;
+      });
+
+      if (filteredBooks.length === 0) {
+        // Blank State for New Readers or Empty Filter Results
+        const filterText = activeFilter === 'all' ? 'Your library is currently empty.' : `No books found under "${activeFilter}".`;
+        
+        booksGrid.innerHTML = `
+          <div class="empty-library-container">
+            <i data-lucide="library" class="empty-library-icon"></i>
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">${filterText}</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem auto;">
+              ${activeFilter === 'all' ? 'Start your personalized reading journey by adding the first story to your shelf.' : 'Try selecting another status tab or add a new book.'}
+            </p>
+            <a href="add-book.html" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="plus"></i> Add Your First Book
+            </a>
+          </div>
+        `;
+      } else {
+        // Render Book Cards
+        booksGrid.innerHTML = filteredBooks.map(book => {
+          const initials = book.title ? book.title.split(' ').map(w => w[0]).join('').slice(0, 2) : 'BK';
+          const statusClass = book.status === 'reading' ? 'status-reading' : book.status === 'completed' ? 'status-completed' : 'status-toread';
+          const statusLabel = book.status === 'reading' ? 'Currently Reading' : book.status === 'completed' ? 'Completed' : 'To Read';
+
+          return `
+            <div class="book-card" data-title="${encodeURIComponent(book.title)}" data-author="${encodeURIComponent(book.author)}" data-status="${book.status}">
+              <div class="book-cover">${initials}</div>
+              <div>
+                <div class="book-title">${book.title}</div>
+                <div class="book-author">by ${book.author}</div>
+              </div>
+              <span class="book-status ${statusClass}">${statusLabel}</span>
+            </div>
+          `;
+        }).join('');
+
+        initBookClickEvents();
+      }
+
+      lucide.createIcons();
+    }
+
+    // Book Click Navigation to Details Page
+    function initBookClickEvents() {
+      const bookCards = document.querySelectorAll('.book-card');
+      bookCards.forEach(card => {
+        card.addEventListener('click', () => {
+          const title = card.getAttribute('data-title');
+          const author = card.getAttribute('data-author');
+          window.location.href = `book-details.html?book=${title}&author=${author}`;
+        });
+      });
+    }
+
+    // Category Filter Buttons Listener
+    function initCategoryFilters() {
+      const filterBtns = document.querySelectorAll('.filter-btn');
+
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          activeFilter = btn.getAttribute('data-filter') || 'all';
+          renderLibrary();
+        });
+      });
+    }
+  </script>
+</body>
+</html>

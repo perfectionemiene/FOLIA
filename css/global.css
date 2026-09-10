@@ -1,0 +1,332 @@
+/* ==========================================================================
+   RESET & BASE STYLES
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  width: 90%;
+  max-width: var(--max-width, 1200px);
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   LAYOUT & APP CONTAINER
+   ========================================================================== */
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Main Content Wrapper */
+.main-content {
+  margin-left: 260px;
+  flex: 1;
+  padding: 2.5rem 3rem;
+  max-width: 1100px;
+}
+
+/* ==========================================================================
+   NAVIGATION & SIDEBAR
+   ========================================================================== */
+
+/* Mobile Top Header Bar (Hidden on Desktop) */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-nav-toggle {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: 8px;
+}
+
+.mobile-nav-close {
+  display: none;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
+/* Sidebar Navigation */
+.sidebar {
+  width: 260px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-color);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  height: 100vh;
+  z-index: 1000;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* Navigation Links */
+.nav-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item a {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition-smooth, all 0.2s ease);
+}
+
+.nav-item a:hover,
+.nav-item.active a {
+  background: var(--bg-main);
+  color: var(--color-primary);
+}
+
+.nav-item.active a {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Dark Backdrop Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE BREAKPOINT (< 900px)
+   ========================================================================== */
+@media (max-width: 900px) {
+  .mobile-header {
+    display: flex;
+  }
+
+  .sidebar {
+    left: -280px;
+    top: 0;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.open {
+    transform: translateX(280px);
+  }
+
+  .mobile-nav-close {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1.25rem !important;
+    width: 100% !important;
+  }
+}
+
+/* ==========================================================================
+   BUTTON SYSTEM
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-button, 8px);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition-smooth, all 0.2s ease);
+}
+
+.btn-primary {
+  background-color: var(--color-primary, #1C1917);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent, #2D5A27);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--bg-main, #FAF8F5);
+  color: var(--text-main, #2C2A29);
+  border-color: var(--border-color, #E5E0D8);
+}
+
+.btn-secondary:hover {
+  background-color: var(--border-color, #E5E0D8);
+}
+
+/* ==========================================================================
+   GLOBAL FORM & INPUT CONTROLS
+   ========================================================================== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main, #2C2A29);
+  display: inline-block;
+}
+
+.input-field,
+.select-field,
+.textarea-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.95rem;
+  color: var(--text-main, #2C2A29);
+  background-color: var(--bg-main, #FAF8F5);
+  border: 1px solid var(--border-color, #E5E0D8);
+  border-radius: var(--radius-input, 8px);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus,
+.select-field:focus,
+.textarea-field:focus {
+  border-color: var(--color-accent, #2D5A27);
+  background-color: var(--bg-surface, #FFFFFF);
+  box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+}
+
+.input-field::placeholder,
+.textarea-field::placeholder {
+  color: var(--text-muted, #8C827A);
+  opacity: 0.75;
+}
+
+.textarea-field {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+.select-field {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238C827A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+}

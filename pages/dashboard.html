@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Modal Overlay Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-surface, #FFFFFF);
+      border: 1px solid var(--border-color, #E9ECEF);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.75rem;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    /* Clean Empty State Container */
+    .empty-reading-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      border: 1px dashed var(--border-color, #E9ECEF);
+      border-radius: var(--radius-card, 12px);
+      background: var(--bg-main, #FAF8F5);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item active"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Dashboard Area -->
+    <main class="main-content">
+      
+      <!-- Greeting Header -->
+      <header class="dashboard-header">
+        <h1 id="greeting">Good day, Reader.</h1>
+        <p>Here is a glimpse into your reading world today.</p>
+      </header>
+
+      <!-- Quote of the Day -->
+      <div class="quote-card">
+        <div class="quote-text">“We read to know we're not alone.”</div>
+        <div class="quote-author">— C.S. Lewis</div>
+      </div>
+
+      <!-- Main Layout Grid -->
+      <div class="dashboard-grid">
+        
+        <!-- Left Column -->
+        <div>
+          <!-- Continue Reading Card -->
+          <div class="card">
+            <div class="card-title">
+              <span>Continue Reading</span>
+              <span class="streak-badge">
+                <i data-lucide="flame" style="width:14px;"></i> <span id="streakStat">0 Days</span>
+              </span>
+            </div>
+            
+            <div id="currentBookContainer">
+              <!-- Rendered dynamically by JS: Active Book Card OR Clean Empty State -->
+            </div>
+          </div>
+
+          <!-- Reading Activity Heatmap -->
+          <div class="card">
+            <div class="card-title">
+              <span>Reading Activity</span>
+              <span style="font-size:0.85rem; color:var(--text-muted);">Recent Days</span>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Consistency over intensity. Keep your daily momentum going.</p>
+            
+            <div class="calendar-grid" id="activityHeatmap">
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+              <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <!-- Yearly Reading Goal Card -->
+          <div class="card">
+            <div class="card-title">
+              <span>2026 Reading Goal</span>
+              <a href="goals.html" style="font-size:0.85rem; color:var(--color-accent);">Details</a>
+            </div>
+            <div style="font-size: 1.75rem; font-weight: 600; margin-bottom: 0.5rem;" id="goalStatText">
+              0 <span style="font-size: 1rem; font-weight: 400; color: var(--text-muted);">/ 0 books</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-bottom: 0.5rem;">
+              <div class="progress-bar-fill" id="goalProgressBar" style="width: 0%;"></div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);" id="goalSubtext">Set your reading goal in Settings</p>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="card">
+            <div class="card-title">Quick Stats</div>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-number" id="booksCompletedStat">0</div>
+                <div class="stat-label">Books Completed</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-number" id="pagesReadStat">0</div>
+                <div class="stat-label">Pages Read</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-number" id="readingTimeStat">0h</div>
+                <div class="stat-label">Reading Time</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-number" id="genresStat">0</div>
+                <div class="stat-label">Genres Explored</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Update Progress Modal -->
+  <div class="modal-overlay" id="progressModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="margin:0;">Update Progress</h3>
+        <button type="button" class="modal-close" id="closeProgressModal">&times;</button>
+      </div>
+      <form id="progressForm">
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;" id="modalBookTitle">
+          Updating progress
+        </p>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="inputCurrentPage">Current Page</label>
+          <input type="number" id="inputCurrentPage" class="input-field" min="0" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="inputCurrentChapter">Current Chapter (Optional)</label>
+          <input type="number" id="inputCurrentChapter" class="input-field" min="0">
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" id="cancelProgressModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Progress</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      renderDashboard();
+      initModalEvents();
+    });
+
+    // Mobile Navigation Toggle
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const openMenu = () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      };
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', openMenu);
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    // Dynamic Dashboard UI Rendering
+    function renderDashboard() {
+      const user = (typeof getStoredUser === 'function') ? getStoredUser() : JSON.parse(localStorage.getItem('folia_user')) || {
+        name: 'Reader',
+        readingGoal: 0,
+        stats: { booksCompleted: 0, pagesRead: 0, currentStreak: 0, readingHours: 0, genresCount: 0 }
+      };
+
+      const library = (typeof getLibrary === 'function') ? getLibrary() : JSON.parse(localStorage.getItem('folia_library')) || [];
+
+      // 1. Dynamic Greeting Header
+      const hour = new Date().getHours();
+      const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+      const greetingEl = document.getElementById('greeting');
+      if (greetingEl) {
+        greetingEl.textContent = `Good ${timeOfDay}, ${user.name || 'Reader'}.`;
+      }
+
+      // 2. Continue Reading Container State
+      const currentBookContainer = document.getElementById('currentBookContainer');
+      const activeBook = library.find(b => b.status === 'reading') || null;
+
+      if (activeBook && currentBookContainer) {
+        const total = activeBook.totalPages || 0;
+        const current = activeBook.currentPage || 0;
+        const percent = total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
+
+        currentBookContainer.innerHTML = `
+          <div class="book-featured">
+            <div class="book-cover-placeholder">
+              <i data-lucide="book" style="width:32px; height:32px;"></i>
+            </div>
+            <div class="book-info">
+              <h3>${activeBook.title}</h3>
+              <p>by ${activeBook.author} ${activeBook.chapter ? '• Chapter ' + activeBook.chapter : ''}</p>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+              </div>
+              <div class="progress-stats">
+                <span>${percent}% completed</span>
+                <span>${current} / ${total} pages</span>
+              </div>
+              <button type="button" class="btn btn-primary" id="openProgressModalBtn" style="padding: 0.5rem 1rem; font-size: 0.9rem; margin-top: 0.75rem;">
+                Update Progress
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (currentBookContainer) {
+        // Clean Empty State for New Readers
+        currentBookContainer.innerHTML = `
+          <div class="empty-reading-state">
+            <i data-lucide="book-open" style="width:36px; height:36px; color:var(--text-muted); margin-bottom: 0.5rem;"></i>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">No book in progress</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.25rem;">Start your reading journey by adding a book to your library.</p>
+            <a href="add-book.html" class="btn btn-primary" style="font-size: 0.875rem;">
+              <i data-lucide="plus" style="width:16px;"></i> Add Your First Book
+            </a>
+          </div>
+        `;
+      }
+
+      // 3. Yearly Goal Progress Stats
+      const goal = user.readingGoal || 0;
+      const completed = user.stats?.booksCompleted || 0;
+      const goalPercent = (goal > 0) ? Math.min(Math.round((completed / goal) * 100), 100) : 0;
+      const booksLeft = Math.max(0, goal - completed);
+
+      const goalStatText = document.getElementById('goalStatText');
+      if (goalStatText) {
+        goalStatText.innerHTML = `${completed} <span style="font-size: 1rem; font-weight: 400; color: var(--text-muted);">/ ${goal} books</span>`;
+      }
+
+      const goalBar = document.getElementById('goalProgressBar');
+      if (goalBar) goalBar.style.width = `${goalPercent}%`;
+
+      const goalSubtext = document.getElementById('goalSubtext');
+      if (goalSubtext) {
+        goalSubtext.textContent = goal > 0 
+          ? `${goalPercent}% reached • ${booksLeft} books left to goal`
+          : 'Set your annual target in Settings or Goals';
+      }
+
+      // 4. Quick Stats Cards
+      const booksStat = document.getElementById('booksCompletedStat');
+      if (booksStat) booksStat.textContent = completed;
+
+      const pagesStat = document.getElementById('pagesReadStat');
+      if (pagesStat) pagesStat.textContent = (user.stats?.pagesRead || 0).toLocaleString();
+
+      const hoursStat = document.getElementById('readingTimeStat');
+      if (hoursStat) hoursStat.textContent = `${user.stats?.readingHours || 0}h`;
+
+      const genresStat = document.getElementById('genresStat');
+      if (genresStat) genresStat.textContent = user.stats?.genresCount || 0;
+
+      const streakStat = document.getElementById('streakStat');
+      if (streakStat) streakStat.textContent = `${user.stats?.currentStreak || 0} Days`;
+
+      lucide.createIcons();
+    }
+
+    // Modal Interaction
+    function initModalEvents() {
+      const modal = document.getElementById('progressModal');
+      const closeBtn = document.getElementById('closeProgressModal');
+      const cancelBtn = document.getElementById('cancelProgressModal');
+      const progressForm = document.getElementById('progressForm');
+
+      const closeModal = () => modal?.classList.remove('active');
+
+      document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'openProgressModalBtn') {
+          modal?.classList.add('active');
+        }
+      });
+
+      closeBtn?.addEventListener('click', closeModal);
+      cancelBtn?.addEventListener('click', closeModal);
+
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      progressForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const pageVal = document.getElementById('inputCurrentPage')?.value;
+        if (pageVal) {
+          alert(`Progress updated to page ${pageVal}!`);
+          closeModal();
+        }
+      });
+    }
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('../sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.warn('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

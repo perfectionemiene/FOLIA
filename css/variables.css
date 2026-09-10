@@ -1,0 +1,122 @@
+/* ==========================================================================
+   Folia — Design System Variables & Theme Palettes
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
+
+:root {
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-quote: 'Cormorant Garamond', serif;
+
+  /* Layout & Geometry */
+  --radius-card: 18px;
+  --radius-button: 12px;
+  --radius-input: 14px;
+  --max-width: 1200px;
+
+  /* Elevation & Motion */
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
+  --transition-smooth: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Functional Status Colors */
+  --color-success: #7D947F;
+  --color-error: #C46B5A;
+}
+
+/* --------------------------------------------------------------------------
+   THEME PALETTES
+   -------------------------------------------------------------------------- */
+
+/* 1. Warm Earth (Default Light) */
+:root, [data-theme="warm-earth"] {
+  --bg-main: #F8F9FA;
+  --bg-surface: #FFFFFF;
+  --text-main: #212529;
+  --text-muted: #6C757D;
+  --border-color: #E9ECEF;
+  --color-primary: #1A1A1A;
+  --color-secondary: #8B7D72;
+  --color-accent: #B87333;
+  --color-accent-soft: #EADCD0;
+}
+
+/* 2. Blush Pink (Girly Light) */
+[data-theme="blush-pink"] {
+  --bg-main: #FFF5F7;
+  --bg-surface: #FFFFFF;
+  --text-main: #2D1A22;
+  --text-muted: #8A6B78;
+  --border-color: #F8D7E3;
+  --color-primary: #3B1C2B;
+  --color-secondary: #A07285;
+  --color-accent: #E05286;
+  --color-accent-soft: #FCDCE7;
+}
+
+/* 3. Soft Lilac (Girly Pastel) */
+[data-theme="soft-lilac"] {
+  --bg-main: #F7F5FF;
+  --bg-surface: #FFFFFF;
+  --text-main: #1F192E;
+  --text-muted: #736B88;
+  --border-color: #E5DEF0;
+  --color-primary: #281E3B;
+  --color-secondary: #8272A0;
+  --color-accent: #8B5CF6;
+  --color-accent-soft: #E0D5FA;
+}
+
+/* 4. Obsidian Red (Mannish Crimson & Dark) */
+[data-theme="obsidian-red"] {
+  --bg-main: #121214;
+  --bg-surface: #1B1B1E;
+  --text-main: #F0F0F2;
+  --text-muted: #8E8E93;
+  --border-color: #2C2C30;
+  --color-primary: #FFFFFF;
+  --color-secondary: #A1A1AA;
+  --color-accent: #E53E3E;
+  --color-accent-soft: #421D1D;
+}
+
+/* 5. Midnight Noir (Mannish Stealth Monochrome) */
+[data-theme="midnight-noir"] {
+  --bg-main: #09090B;
+  --bg-surface: #141417;
+  --text-main: #FAFAFA;
+  --text-muted: #71717A;
+  --border-color: #27272A;
+  --color-primary: #FFFFFF;
+  --color-secondary: #A1A1AA;
+  --color-accent: #D4D4D8;
+  --color-accent-soft: #27272A;
+}
+
+/* 6. Dark Forest (Deep Green) */
+[data-theme="dark-forest"] {
+  --bg-main: #121B16;
+  --bg-surface: #1B2620;
+  --text-main: #E2E8E4;
+  --text-muted: #8FA396;
+  --border-color: #2A3B31;
+  --color-primary: #E2E8E4;
+  --color-secondary: #7FA08B;
+  --color-accent: #52B788;
+  --color-accent-soft: #1D3B2E;
+}
+
+/* 7. Nordic Slate (Deep Blue) */
+[data-theme="nordic-slate"] {
+  --bg-main: #0F172A;
+  --bg-surface: #1E293B;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --border-color: #334155;
+  --color-primary: #F8FAFC;
+  --color-secondary: #64748B;
+  --color-accent: #38BDF8;
+  --color-accent-soft: #1E3A5F;
+}
