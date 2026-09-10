@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Analytics Component Page Styles */
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    /* Stat Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: var(--color-primary);
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { 
+        grid-template-columns: 1fr; 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Dark Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item active"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <h1>Reading Analytics</h1>
+        <p style="color: var(--text-muted);">Insights into your reading habits, volume, and genres in 2026.</p>
+      </header>
+
+      <!-- Key Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Books Read</div>
+          <div class="metric-value" id="analyticsTotalBooks">18</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Pages Read</div>
+          <div class="metric-value" id="analyticsTotalPages">4,120</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg. Completion Time</div>
+          <div class="metric-value">11 Days</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Daily Avg. Reading</div>
+          <div class="metric-value">28 mins</div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <!-- Monthly Reading Volume -->
+        <div class="chart-card">
+          <div class="chart-title">Pages Read per Month</div>
+          <canvas id="pagesChart" height="220"></canvas>
+        </div>
+
+        <!-- Top Genres breakdown -->
+        <div class="chart-card">
+          <div class="chart-title">Genre Breakdown</div>
+          <canvas id="genreChart" height="220"></canvas>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      renderAnalytics();
+      initCharts();
+    });
+
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const openMenu = () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      };
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', openMenu);
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    function renderAnalytics() {
+      if (typeof getLibrary !== 'function') return;
+
+      const library = getLibrary();
+      const finishedBooks = library.filter(b => b.status === 'finished');
+      const totalPages = finishedBooks.reduce((sum, b) => sum + (Number(b.pages) || 0), 0);
+
+      const totalBooksEl = document.getElementById('analyticsTotalBooks');
+      if (totalBooksEl && finishedBooks.length > 0) {
+        totalBooksEl.textContent = finishedBooks.length;
+      }
+
+      const totalPagesEl = document.getElementById('analyticsTotalPages');
+      if (totalPagesEl && totalPages > 0) {
+        totalPagesEl.textContent = totalPages.toLocaleString();
+      }
+    }
+
+    function initCharts() {
+      // Bar Chart: Pages Read
+      const ctxPages = document.getElementById('pagesChart')?.getContext('2d');
+      if (ctxPages) {
+        new Chart(ctxPages, {
+          type: 'bar',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+            datasets: [{
+              label: 'Pages Read',
+              data: [450, 380, 520, 600, 410, 580, 620, 560, 180],
+              backgroundColor: '#B86B55',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { grid: { color: '#EBE5DC' } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // Doughnut Chart: Genre Distribution
+      const ctxGenre = document.getElementById('genreChart')?.getContext('2d');
+      if (ctxGenre) {
+        new Chart(ctxGenre, {
+          type: 'doughnut',
+          data: {
+            labels: ['Non-Fiction', 'Self-Help', 'Philosophy', 'Fiction'],
+            datasets: [{
+              data: [40, 25, 20, 15],
+              backgroundColor: ['#2C3E35', '#B86B55', '#D9CEBE', '#8C9A86']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
