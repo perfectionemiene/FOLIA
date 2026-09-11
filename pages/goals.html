@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goals & Challenges — Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Goals Specific Component Styles */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Primary Challenge Card */
+    .hero-goal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .hero-goal-info {
+      flex: 1;
+    }
+
+    .hero-header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .hero-goal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .edit-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      transition: var(--transition-smooth, all 0.2s ease);
+    }
+
+    .edit-btn:hover {
+      background: var(--bg-main);
+      color: var(--color-accent);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 1rem 0 0.5rem 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Streak Widget */
+    .streak-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #F4EFE6;
+      border: 1px solid #D9CEBE;
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      min-width: 160px;
+      text-align: center;
+    }
+
+    .streak-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      line-height: 1;
+      margin-top: 0.25rem;
+    }
+
+    /* Goals Grid */
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .goal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .goal-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .goal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--bg-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+
+    .goal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      width: 100%;
+      max-width: 460px;
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .hero-goal-card {
+        flex-direction: column;
+        text-align: center;
+      }
+      .hero-header-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+      .streak-badge {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item active"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <div>
+          <h1>Goals & Challenges</h1>
+          <p style="color: var(--text-muted); margin-top: 0.25rem;">Set personal targets, stay consistent, and celebrate milestones.</p>
+        </div>
+        <button class="btn btn-primary" id="openModalBtn">
+          <i data-lucide="settings-2" style="width:16px;"></i> Customize Goals
+        </button>
+      </header>
+
+      <!-- Dynamic Yearly Hero Goal Card -->
+      <section class="hero-goal-card">
+        <div class="hero-goal-info">
+          <div class="hero-header-actions">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--color-accent); letter-spacing: 0.05em;" id="yearLabel">2026 Annual Challenge</div>
+              <div class="hero-goal-title" id="goalTitleDisplay">Read 12 Books This Year</div>
+            </div>
+            <button class="edit-btn" id="editHeroBtn" type="button"><i data-lucide="pencil" style="width:14px;"></i> Edit</button>
+          </div>
+
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;" id="goalSubtext">Loading progress...</p>
+          
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="heroProgressBar" style="width: 0%;"></div>
+          </div>
+          <div class="progress-stats">
+            <span id="heroStatRead"><strong>0</strong> of 12 books completed</span>
+            <span id="heroStatPercent">0% complete</span>
+          </div>
+        </div>
+
+        <div class="streak-badge">
+          <i data-lucide="flame" style="width:28px; color: var(--color-accent);"></i>
+          <div class="streak-number" id="streakDisplay">0</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Day Streak</div>
+        </div>
+      </section>
+
+      <!-- Active Sub-Goals Grid -->
+      <h2 style="font-size: 1.35rem; margin-bottom: 1.25rem;">Active Targets</h2>
+
+      <div class="goals-grid">
+        
+        <!-- Pages Goal Card -->
+        <div class="goal-card">
+          <div>
+            <div class="goal-card-header">
+              <div class="goal-icon"><i data-lucide="book-open" style="width:20px;"></i></div>
+              <div>
+                <div class="goal-title">Annual Page Goal</div>
+                <div style="font-size:0.85rem; color: var(--text-muted);">Pages Target</div>
+              </div>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="pagesProgressBar" style="width: 0%;"></div>
+            </div>
+            <div class="progress-stats">
+              <span id="pagesStat">0 / 3,000 pages</span>
+              <span id="pagesPercent">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Genre Expansion Card -->
+        <div class="goal-card">
+          <div>
+            <div class="goal-card-header">
+              <div class="goal-icon"><i data-lucide="compass" style="width:20px;"></i></div>
+              <div>
+                <div class="goal-title">Genre Exploration</div>
+                <div style="font-size:0.85rem; color: var(--text-muted);">Broaden Horizons</div>
+              </div>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="genreProgressBar" style="width: 0%;"></div>
+            </div>
+            <div class="progress-stats">
+              <span id="genreStat">0 / 5 genres explored</span>
+              <span id="genrePercent">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Target Card -->
+        <div class="goal-card">
+          <div>
+            <div class="goal-card-header">
+              <div class="goal-icon"><i data-lucide="clock" style="width:20px;"></i></div>
+              <div>
+                <div class="goal-title">Daily Reading Target</div>
+                <div style="font-size:0.85rem; color: var(--text-muted);">Daily Habit</div>
+              </div>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="dailyProgressBar" style="width: 0%;"></div>
+            </div>
+            <div class="progress-stats">
+              <span id="dailyTargetDisplay">0 / 20 mins target</span>
+              <span id="dailyPercent">0%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Customize Goal Modal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="margin: 0; font-size: 1.25rem;">Customize Your Reading Goals</h3>
+        <button class="close-modal-btn" id="closeModalBtn" type="button"><i data-lucide="x" style="width:20px;"></i></button>
+      </div>
+
+      <form id="goalForm">
+        <div style="display: flex; flex-direction: column;">
+          
+          <div class="form-group">
+            <label for="inputYearlyTarget">2026 Book Target (Total Books)</label>
+            <input type="number" id="inputYearlyTarget" class="input-field" min="1" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputBooksRead">Books Completed So Far</label>
+            <input type="number" id="inputBooksRead" class="input-field" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputPagesTarget">Yearly Page Target</label>
+            <input type="number" id="inputPagesTarget" class="input-field" min="100" step="50" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputPagesRead">Pages Read So Far</label>
+            <input type="number" id="inputPagesRead" class="input-field" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputDailyMins">Daily Reading Goal (Minutes)</label>
+            <input type="number" id="inputDailyMins" class="input-field" min="5" step="5" required>
+          </div>
+
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Goals</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      renderGoalsUI();
+      initModalHandlers();
+    });
+
+    // Default Empty State Goal Data Schema
+    const defaultUserGoals = {
+      targetBooks: 12,
+      completedBooks: 0,
+      targetPages: 3000,
+      completedPages: 0,
+      dailyMins: 20,
+      streakDays: 0,
+      currentYear: new Date().getFullYear()
+    };
+
+    // Load goals from localStorage or fallback with dynamic library integration
+    function getUserGoals() {
+      const stored = localStorage.getItem('folia_user_goals');
+      let goals = stored ? JSON.parse(stored) : { ...defaultUserGoals };
+
+      // Calculate dynamic progress from actual library if present
+      const library = (typeof getLibrary === 'function') ? getLibrary() : JSON.parse(localStorage.getItem('folia_library')) || [];
+      if (library.length > 0) {
+        const finishedBooks = library.filter(b => b.status === 'completed' || b.status === 'finished');
+        if (finishedBooks.length > 0) {
+          goals.completedBooks = finishedBooks.length;
+          goals.completedPages = finishedBooks.reduce((sum, b) => sum + (Number(b.totalPages || b.pages) || 0), 0);
+        }
+      }
+
+      return goals;
+    }
+
+    // Save goals to localStorage & update state
+    function saveUserGoals(goals) {
+      localStorage.setItem('folia_user_goals', JSON.stringify(goals));
+      renderGoalsUI();
+    }
+
+    // Mobile Navigation Toggle Logic
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const openMenu = () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      };
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', openMenu);
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    // Render Goals into DOM
+    function renderGoalsUI() {
+      const goals = getUserGoals();
+
+      // Yearly Book Goal
+      const bookPercent = goals.targetBooks > 0 ? Math.min(Math.round((goals.completedBooks / goals.targetBooks) * 100), 100) : 0;
+      const booksRemaining = goals.targetBooks - goals.completedBooks;
+
+      document.getElementById('yearLabel').textContent = `${goals.currentYear} Annual Challenge`;
+      document.getElementById('goalTitleDisplay').textContent = `Read ${goals.targetBooks} Books This Year`;
+      
+      if (booksRemaining <= 0 && goals.completedBooks > 0) {
+        document.getElementById('goalSubtext').textContent = `🎉 Goal achieved! You've reached your target of ${goals.targetBooks} books!`;
+      } else if (goals.completedBooks === 0) {
+        document.getElementById('goalSubtext').textContent = `Start your first book to begin tracking your annual goal!`;
+      } else {
+        document.getElementById('goalSubtext').textContent = `${booksRemaining} ${booksRemaining === 1 ? 'book' : 'books'} left to reach your goal.`;
+      }
+
+      document.getElementById('heroProgressBar').style.width = `${bookPercent}%`;
+      document.getElementById('heroStatRead').innerHTML = `<strong>${goals.completedBooks}</strong> of ${goals.targetBooks} books completed`;
+      document.getElementById('heroStatPercent').textContent = `${bookPercent}% complete`;
+      document.getElementById('streakDisplay').textContent = goals.streakDays;
+
+      // Page Target Calculations
+      const pagePercent = goals.targetPages > 0 ? Math.min(Math.round((goals.completedPages / goals.targetPages) * 100), 100) : 0;
+      document.getElementById('pagesProgressBar').style.width = `${pagePercent}%`;
+      document.getElementById('pagesStat').textContent = `${goals.completedPages.toLocaleString()} / ${goals.targetPages.toLocaleString()} pages`;
+      document.getElementById('pagesPercent').textContent = `${pagePercent}%`;
+
+      // Daily Minutes Target
+      const dailyCompleted = goals.completedMins || 0;
+      const dailyPercent = goals.dailyMins > 0 ? Math.min(Math.round((dailyCompleted / goals.dailyMins) * 100), 100) : 0;
+      document.getElementById('dailyProgressBar').style.width = `${dailyPercent}%`;
+      document.getElementById('dailyTargetDisplay').textContent = `${dailyCompleted} / ${goals.dailyMins} mins target`;
+      document.getElementById('dailyPercent').textContent = `${dailyPercent}%`;
+    }
+
+    // Modal Control Handlers
+    function initModalHandlers() {
+      const goalModal = document.getElementById('goalModal');
+      const openModalBtn = document.getElementById('openModalBtn');
+      const editHeroBtn = document.getElementById('editHeroBtn');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      const cancelModalBtn = document.getElementById('cancelModalBtn');
+      const goalForm = document.getElementById('goalForm');
+
+      const openModal = () => {
+        const goals = getUserGoals();
+        document.getElementById('inputYearlyTarget').value = goals.targetBooks;
+        document.getElementById('inputBooksRead').value = goals.completedBooks;
+        document.getElementById('inputPagesTarget').value = goals.targetPages;
+        document.getElementById('inputPagesRead').value = goals.completedPages;
+        document.getElementById('inputDailyMins').value = goals.dailyMins;
+
+        goalModal?.classList.add('active');
+      };
+
+      const closeModal = () => {
+        goalModal?.classList.remove('active');
+      };
+
+      openModalBtn?.addEventListener('click', openModal);
+      editHeroBtn?.addEventListener('click', openModal);
+      closeModalBtn?.addEventListener('click', closeModal);
+      cancelModalBtn?.addEventListener('click', closeModal);
+
+      // Close modal on backdrop click
+      goalModal?.addEventListener('click', (e) => {
+        if (e.target === goalModal) closeModal();
+      });
+
+      // Close modal on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && goalModal?.classList.contains('active')) {
+          closeModal();
+        }
+      });
+
+      // Save Form Values
+      goalForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const updatedGoals = {
+          ...getUserGoals(),
+          targetBooks: parseInt(document.getElementById('inputYearlyTarget').value, 10) || 1,
+          completedBooks: parseInt(document.getElementById('inputBooksRead').value, 10) || 0,
+          targetPages: parseInt(document.getElementById('inputPagesTarget').value, 10) || 100,
+          completedPages: parseInt(document.getElementById('inputPagesRead').value, 10) || 0,
+          dailyMins: parseInt(document.getElementById('inputDailyMins').value, 10) || 20
+        };
+
+        saveUserGoals(updatedGoals);
+        closeModal();
+      });
+    }
+  </script>
+</body>
+</html>
