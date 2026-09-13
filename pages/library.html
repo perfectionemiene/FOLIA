@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library — Folia</title>
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Library Component Styles */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: var(--transition-smooth, all 0.2s ease);
+    }
+
+    .filter-btn.active, 
+    .filter-btn:hover {
+      background: var(--color-primary);
+      color: #FFF;
+      border-color: var(--color-primary);
+    }
+
+    /* Books Grid Layout */
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .book-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      color: inherit;
+    }
+
+    .book-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .book-cover {
+      width: 100%;
+      height: 200px;
+      background: var(--color-accent-soft, #f4ebe1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--color-accent);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      overflow: hidden;
+    }
+
+    .book-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .book-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: var(--color-primary);
+      line-height: 1.3;
+    }
+
+    .book-author {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .book-status {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .status-reading { color: var(--color-accent); }
+    .status-completed { color: #4CAF50; }
+    .status-toread { color: var(--text-muted); }
+
+    .book-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: auto;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.4rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon.delete:hover {
+      background: #FFEBEE;
+      color: #D32F2F;
+      border-color: #FFCDD2;
+    }
+
+    /* Blank / Empty Library State */
+    .empty-library-container {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 1.5rem;
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      margin-top: 1rem;
+    }
+
+    .empty-library-icon {
+      width: 56px;
+      height: 56px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.5rem; }
+      .books-grid { grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+      .book-cover { height: 160px; font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item active"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <div>
+          <h1>My Library</h1>
+          <p style="color: var(--text-muted); margin-top: 0.25rem;">Manage and organize your collection</p>
+        </div>
+        <a href="add-book.html" class="btn btn-primary" style="background: var(--color-primary); color: #fff;">
+          <i data-lucide="plus"></i> Add New Book
+        </a>
+      </header>
+
+      <!-- Filter Categories -->
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-btn active" data-filter="all">All Books</button>
+        <button class="filter-btn" data-filter="reading">Reading</button>
+        <button class="filter-btn" data-filter="completed">Completed</button>
+        <button class="filter-btn" data-filter="to-read">To Read</button>
+      </div>
+
+      <!-- Books Grid Dynamic Container -->
+      <section class="books-grid" id="booksGrid">
+        <!-- Rendered dynamically via JS -->
+      </section>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    let activeFilter = 'all';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderLibrary();
+      initCategoryFilters();
+    });
+
+    // Dynamic Library Rendering
+    function renderLibrary() {
+      const booksGrid = document.getElementById('booksGrid');
+      if (!booksGrid) return;
+
+      let library = [];
+      if (typeof getUserData === 'function') {
+        const data = getUserData();
+        library = Array.isArray(data.books) ? data.books : [];
+      } else if (typeof getLibrary === 'function') {
+        library = getLibrary();
+      }
+
+      // Status normalization helper (e.g. 'finished' -> 'completed', 'want' -> 'to-read')
+      const normalizeStatus = (status) => {
+        if (!status) return 'to-read';
+        if (status === 'finished' || status === 'completed') return 'completed';
+        if (status === 'want' || status === 'to-read') return 'to-read';
+        return status;
+      };
+
+      // Filter books based on active tab selection
+      const filteredBooks = library.filter(book => {
+        if (activeFilter === 'all') return true;
+        return normalizeStatus(book.status) === activeFilter;
+      });
+
+      if (filteredBooks.length === 0) {
+        const filterText = activeFilter === 'all' 
+          ? 'Your library is currently empty.' 
+          : `No books found under "${activeFilter === 'completed' ? 'Completed' : activeFilter === 'to-read' ? 'To Read' : 'Reading'}".`;
+        
+        booksGrid.innerHTML = `
+          <div class="empty-library-container">
+            <i data-lucide="library" class="empty-library-icon"></i>
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">${filterText}</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem auto;">
+              ${activeFilter === 'all' ? 'Start your personalized reading journey by adding the first story to your shelf.' : 'Try selecting another status tab or add a new book.'}
+            </p>
+            <a href="add-book.html" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="plus"></i> Add Your First Book
+            </a>
+          </div>
+        `;
+      } else {
+        booksGrid.innerHTML = filteredBooks.map(book => {
+          const title = (book.title || 'Untitled');
+          const author = (book.author || 'Unknown Author');
+          const status = normalizeStatus(book.status);
+          const initials = book.title ? book.title.split(' ').map(w => w[0]).join('').slice(0, 2) : 'BK';
+
+          const statusClass = status === 'reading' ? 'status-reading' : (status === 'completed' ? 'status-completed' : 'status-toread');
+          const statusLabel = status === 'reading' ? 'Currently Reading' : (status === 'completed' ? 'Completed' : 'To Read');
+
+          return `
+            <div class="book-card" data-id="${book.id}">
+              <div class="book-cover">
+                ${book.cover ? `<img src="${book.cover}" alt="${title}">` : initials}
+              </div>
+              <div>
+                <div class="book-title">${title}</div>
+                <div class="book-author">by ${author}</div>
+              </div>
+              <span class="book-status ${statusClass}">${statusLabel}</span>
+
+              <div class="book-actions">
+                <a href="reader.html?id=${encodeURIComponent(book.id)}&book=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author)}" class="btn btn-secondary" style="flex: 1; justify-content: center; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                  <i data-lucide="book-open" style="width:15px;"></i> Read
+                </a>
+                <button type="button" class="btn-icon delete" title="Delete Book" onclick="removeBook(event, '${book.id}')">
+                  <i data-lucide="trash-2" style="width:16px; height:16px;"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      lucide.createIcons();
+    }
+
+    // Category Filter Listener
+    function initCategoryFilters() {
+      const filterBtns = document.querySelectorAll('.filter-btn');
+
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          activeFilter = btn.getAttribute('data-filter') || 'all';
+          renderLibrary();
+        });
+      });
+    }
+
+    // Book Deletion Handler (removes metadata & local file)
+    async function removeBook(event, bookId) {
+      event.stopPropagation();
+      if (!confirm('Are you sure you want to remove this book from your library?')) return;
+
+      const userData = typeof getUserData === 'function' ? getUserData() : null;
+      if (userData && userData.books) {
+        userData.books = userData.books.filter(b => String(b.id) !== String(bookId));
+        if (typeof saveUserData === 'function') {
+          saveUserData(userData);
+        }
+      }
+
+      if (typeof deleteBookFile === 'function') {
+        await deleteBookFile(bookId);
+      }
+
+      renderLibrary();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Book — Folia</title>
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PDF.js library for auto counting PDF pages -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .add-book-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .form-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Form Layout Elements */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    /* File Drop Zone */
+    .file-dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      background: var(--bg-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 1.5rem;
+    }
+
+    .file-dropzone:hover,
+    .file-dropzone.dragover {
+      border-color: var(--color-accent);
+      background: var(--bg-surface);
+    }
+
+    .dropzone-icon {
+      width: 42px;
+      height: 42px;
+      color: var(--color-accent);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Preview Sidebar */
+    .preview-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      text-align: center;
+      position: sticky;
+      top: 2rem;
+    }
+
+    .preview-cover {
+      width: 140px;
+      height: 200px;
+      margin: 0 auto 1.25rem auto;
+      background: var(--bg-main);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .preview-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .preview-author {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--bg-main);
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      .add-book-grid {
+        grid-template-columns: 1fr;
+      }
+      .preview-card {
+        order: -1;
+        position: static;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Mobile Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item active"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <header class="page-header">
+        <h1>Add New Book</h1>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;">Upload an EPUB or PDF file, or enter book details manually.</p>
+      </header>
+
+      <div class="add-book-grid">
+
+        <!-- Form Column -->
+        <div class="form-card">
+
+          <!-- File Upload Dropzone -->
+          <div class="section-title">
+            <i data-lucide="file-up" style="width:18px;"></i> Upload Reader File (EPUB or PDF)
+          </div>
+          <div class="file-dropzone" id="fileDropzone">
+            <i data-lucide="upload-cloud" class="dropzone-icon"></i>
+            <h3 style="font-size: 1rem; font-weight:600; margin-bottom: 0.25rem;">Click to upload or drag & drop</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);" id="fileNameDisplay">Supports .epub and .pdf files (auto counts pages)</p>
+            <input type="file" id="bookFileInput" accept=".epub,.pdf" style="display: none;">
+          </div>
+
+          <!-- Manual Metadata Form -->
+          <form id="addBookForm">
+            <div class="section-title">
+              <i data-lucide="book-marked" style="width:18px;"></i> Book Details
+            </div>
+
+            <div class="form-group">
+              <label for="bookTitle">Book Title *</label>
+              <input type="text" id="bookTitle" required placeholder="e.g. Four Thousand Weeks">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bookAuthor">Author *</label>
+                <input type="text" id="bookAuthor" required placeholder="e.g. Oliver Burkeman">
+              </div>
+              <div class="form-group">
+                <label for="bookCategory">Genre / Category</label>
+                <input type="text" id="bookCategory" placeholder="e.g. Fiction, Philosophy">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="readingStatus">Reading Status</label>
+              <select id="readingStatus">
+                <option value="want">Want to Read</option>
+                <option value="reading">Currently Reading</option>
+                <option value="finished">Finished</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="bookNotes">Initial Thoughts / Reading Intentions</label>
+              <textarea id="bookNotes" rows="3" placeholder="Why are you starting this book or what do you hope to learn?"></textarea>
+            </div>
+            
+            <input type="hidden" id="totalPages" value="0">
+            <input type="hidden" id="coverUrl" value="">
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+              <a href="library.html" class="btn btn-secondary">Cancel</a>
+              <button type="submit" id="saveBookBtn" class="btn btn-primary" style="background: var(--color-primary); color: #fff;">
+                <i data-lucide="check" style="width:18px;"></i> Save to Library
+              </button>
+            </div>
+          </form>
+
+        </div>
+
+        <!-- Live Preview Sidebar -->
+        <aside class="preview-card">
+          <h3 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:1rem;">Card Preview</h3>
+          <div class="preview-cover" id="previewCover">
+            <i data-lucide="book-open" style="width:40px; height:40px;"></i>
+          </div>
+          <div class="preview-title" id="previewTitle">Book Title</div>
+          <div class="preview-author" id="previewAuthor">by Author Name</div>
+          <span class="status-badge" id="previewStatus">Want to Read</span>
+        </aside>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <!-- EPUB Parsing Dependencies for Page Count -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.88/dist/epub.min.js"></script>
+
+  <script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+  }
+
+  let selectedFile = null;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+    initMobileNav();
+    initFileUpload();
+    initLivePreview();
+    initFormSubmit();
+  });
+
+  function initMobileNav() {
+    const toggleBtn = document.getElementById("mobileNavToggle");
+    const closeBtn = document.getElementById("mobileNavClose");
+    const sidebar = document.getElementById("appSidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    const closeMenu = () => {
+      sidebar?.classList.remove("open");
+      overlay?.classList.remove("active");
+    };
+
+    toggleBtn?.addEventListener("click", () => {
+      sidebar?.classList.add("open");
+      overlay?.classList.add("active");
+    });
+
+    closeBtn?.addEventListener("click", closeMenu);
+    overlay?.addEventListener("click", closeMenu);
+  }
+
+  function initFileUpload() {
+    const dropzone = document.getElementById("fileDropzone");
+    const fileInput = document.getElementById("bookFileInput");
+
+    dropzone?.addEventListener("click", () => fileInput?.click());
+
+    dropzone?.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+
+    ["dragleave", "dragend"].forEach((eventName) => {
+      dropzone?.addEventListener(eventName, () => {
+        dropzone.classList.remove("dragover");
+      });
+    });
+
+    dropzone?.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("dragover");
+
+      const file = event.dataTransfer.files[0];
+
+      if (file) {
+        handleSelectedFile(file);
+      }
+    });
+
+    fileInput?.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+
+      if (file) {
+        handleSelectedFile(file);
+      }
+    });
+  }
+
+  async function handleSelectedFile(file) {
+    const fileNameDisplay = document.getElementById("fileNameDisplay");
+    const fileName = file.name.toLowerCase();
+    const isPdf = fileName.endsWith(".pdf");
+    const isEpub = fileName.endsWith(".epub");
+
+    if (!isPdf && !isEpub) {
+      selectedFile = null;
+      fileNameDisplay.textContent = "Please choose a valid .epub or .pdf file.";
+      alert("Only EPUB and PDF files are supported.");
+      return;
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      validateBookFile(arrayBuffer, isPdf);
+    } catch (error) {
+      selectedFile = null;
+      fileNameDisplay.textContent = "This file could not be read.";
+      alert(error.message);
+      return;
+    }
+
+    selectedFile = file;
+
+    fileNameDisplay.textContent =
+      `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+
+    const titleInput = document.getElementById("bookTitle");
+
+    if (!titleInput.value) {
+      titleInput.value = file.name
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]/g, " ");
+    }
+
+    try {
+      if (isPdf) {
+        await detectPdfPageCount(file);
+      } else {
+        await estimateEpubLocations(file);
+      }
+    } catch (error) {
+      console.warn("Could not estimate reading length:", error);
+    }
+
+    updatePreview();
+  }
+
+  function validateBookFile(arrayBuffer, isPdf) {
+    const bytes = new Uint8Array(arrayBuffer.slice(0, 4));
+
+    const isPdfMagic =
+      bytes[0] === 0x25 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x44 &&
+      bytes[3] === 0x46;
+
+    const isZipMagic =
+      bytes[0] === 0x50 &&
+      bytes[1] === 0x4b &&
+      (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07);
+
+    if (isPdf && !isPdfMagic) {
+      throw new Error("This file is not a valid PDF.");
+    }
+
+    if (!isPdf && !isZipMagic) {
+      throw new Error(
+        "This file is not a valid EPUB archive. Please choose a real .epub file."
+      );
+    }
+  }
+
+  async function detectPdfPageCount(file) {
+    const arrayBuffer = await file.arrayBuffer();
+
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer
+    }).promise;
+
+    const totalPagesInput = document.getElementById("totalPages");
+    if (totalPagesInput) totalPagesInput.value = pdf.numPages;
+  }
+
+  async function estimateEpubLocations(file) {
+    if (!window.JSZip || !window.ePub) {
+      throw new Error("EPUB reader libraries could not load.");
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const mimetypeFile = zip.file("mimetype");
+    const containerFile = zip.file("META-INF/container.xml");
+
+    if (!mimetypeFile || !containerFile) {
+      throw new Error("This is not a standard EPUB file.");
+    }
+
+    const mimetype = (await mimetypeFile.async("text")).trim();
+
+    if (mimetype !== "application/epub+zip") {
+      throw new Error("This is not a standard EPUB file.");
+    }
+
+    const book = ePub(arrayBuffer);
+
+    await book.ready;
+    await book.locations.generate(1000);
+
+    const totalPagesInput = document.getElementById("totalPages");
+    if (book.locations.total && totalPagesInput) {
+      totalPagesInput.value = book.locations.total;
+    }
+
+    book.destroy?.();
+  }
+
+  function initLivePreview() {
+    document
+      .getElementById("bookTitle")
+      ?.addEventListener("input", updatePreview);
+
+    document
+      .getElementById("bookAuthor")
+      ?.addEventListener("input", updatePreview);
+
+    document
+      .getElementById("readingStatus")
+      ?.addEventListener("change", updatePreview);
+  }
+
+  function updatePreview() {
+    const title = document.getElementById("bookTitle").value || "Book Title";
+    const author =
+      document.getElementById("bookAuthor").value || "Author Name";
+
+    const statusSelect = document.getElementById("readingStatus");
+    const status =
+      statusSelect.options[statusSelect.selectedIndex]?.text ||
+      "Want to Read";
+
+    const coverUrl = document.getElementById("coverUrl").value;
+    const coverContainer = document.getElementById("previewCover");
+
+    document.getElementById("previewTitle").textContent = title;
+    document.getElementById("previewAuthor").textContent = `by ${author}`;
+    document.getElementById("previewStatus").textContent = status;
+
+    if (coverUrl) {
+      coverContainer.innerHTML = `<img src="${coverUrl}" alt="Book cover">`;
+    } else {
+      coverContainer.innerHTML =
+        `<i data-lucide="book-open" style="width:40px;height:40px;"></i>`;
+
+      lucide.createIcons();
+    }
+  }
+
+  function initFormSubmit() {
+    const form = document.getElementById("addBookForm");
+    const saveBtn = document.getElementById("saveBookBtn");
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const title = document.getElementById("bookTitle").value.trim();
+      const author = document.getElementById("bookAuthor").value.trim();
+
+      if (!title || !author) {
+        alert("Please enter a book title and author.");
+        return;
+      }
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+      }
+
+      try {
+        const bookId =
+          window.crypto?.randomUUID?.() || `book_${Date.now()}`;
+
+        const category = document
+          .getElementById("bookCategory")
+          .value.trim();
+
+        const totalPagesInput = document.getElementById("totalPages");
+        const totalPages =
+          parseInt(totalPagesInput ? totalPagesInput.value : 0, 10) || 0;
+
+        const status = document.getElementById("readingStatus").value;
+        const notes = document.getElementById("bookNotes").value.trim();
+        const cover = document.getElementById("coverUrl").value;
+
+        if (selectedFile) {
+          await saveBookFile(bookId, selectedFile);
+        }
+
+        const isPdf =
+          selectedFile?.name.toLowerCase().endsWith(".pdf") || false;
+
+        const newBook = {
+          id: bookId,
+          title,
+          author,
+          category,
+          totalPages,
+          currentPage: status === "finished" ? totalPages : 0,
+          status,
+          notes,
+          cover,
+          format: isPdf ? "pdf" : "epub",
+          favoriteQuote: "",
+          hasFile: Boolean(selectedFile),
+          fileName: selectedFile?.name || null,
+          addedAt: new Date().toISOString(),
+          finishedAt:
+            status === "finished" ? new Date().toISOString() : null
+        };
+
+        const userData =
+          typeof getUserData === "function"
+            ? getUserData()
+            : { books: [] };
+
+        if (!userData.books) {
+          userData.books = [];
+        }
+
+        userData.books.unshift(newBook);
+
+        if (typeof saveUserData === "function") {
+          saveUserData(userData);
+        }
+
+        window.location.href = "library.html";
+      } catch (error) {
+        console.error("Book save failed:", error);
+        alert(`Could not save this book: ${error.message}`);
+
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML =
+            `<i data-lucide="check" style="width:18px;"></i> Save to Library`;
+          lucide.createIcons();
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>
