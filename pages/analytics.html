@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- localForage & Storage Helper -->
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Analytics Component Page Styles */
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    /* Stat Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: var(--color-primary);
+    }
+
+    .chart-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { 
+        grid-template-columns: 1fr; 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Dark Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item active"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <h1>Reading Analytics</h1>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;">Insights into your reading habits, volume, and genres in 2026.</p>
+      </header>
+
+      <!-- Key Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Books Read</div>
+          <div class="metric-value" id="analyticsTotalBooks">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Pages Read</div>
+          <div class="metric-value" id="analyticsTotalPages">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Time Read</div>
+          <div class="metric-value" id="analyticsTotalTime">0m</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Daily Avg. Reading</div>
+          <div class="metric-value" id="analyticsDailyAvg">0 mins</div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <!-- Monthly Reading Volume -->
+        <div class="chart-card">
+          <div class="chart-title">Pages Read per Month</div>
+          <div class="chart-container">
+            <canvas id="pagesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Genres breakdown -->
+        <div class="chart-card">
+          <div class="chart-title">Genre Breakdown</div>
+          <div class="chart-container">
+            <canvas id="genreChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+
+  <script>
+    let pagesChartInstance = null;
+    let genreChartInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      refreshAnalytics();
+
+      // Listen for updates from other tabs/components
+      window.addEventListener('foliaDataUpdated', refreshAnalytics);
+    });
+
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      });
+
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    function refreshAnalytics() {
+      const userData = (typeof getUserData === 'function') ? getUserData() : { books: [], readingLogs: [] };
+      const stats = (typeof calculateReadingStats === 'function') ? calculateReadingStats() : { completedCount: 0, totalPagesRead: 0, formattedTime: '0m' };
+
+      // Metric Cards Update
+      const totalBooksEl = document.getElementById('analyticsTotalBooks');
+      if (totalBooksEl) totalBooksEl.textContent = stats.completedCount || 0;
+
+      const totalPagesEl = document.getElementById('analyticsTotalPages');
+      if (totalPagesEl) totalPagesEl.textContent = (stats.totalPagesRead || 0).toLocaleString();
+
+      const totalTimeEl = document.getElementById('analyticsTotalTime');
+      if (totalTimeEl) totalTimeEl.textContent = stats.formattedTime || '0m';
+
+      // Daily Average Calculation (Total minutes / logged days)
+      const logs = userData.readingLogs || [];
+      const totalMinutes = logs.reduce((sum, l) => sum + (Number(l.durationMinutes) || 0), 0);
+      const uniqueDays = new Set(logs.map(l => l.timestamp ? new Date(l.timestamp).toDateString() : null)).size || 1;
+      const dailyAvgMins = logs.length > 0 ? Math.round(totalMinutes / uniqueDays) : 0;
+
+      const dailyAvgEl = document.getElementById('analyticsDailyAvg');
+      if (dailyAvgEl) dailyAvgEl.textContent = `${dailyAvgMins} mins`;
+
+      renderCharts(userData);
+    }
+
+    function renderCharts(userData) {
+      const books = userData.books || [];
+      const logs = userData.readingLogs || [];
+
+      // 1. Monthly Reading Volume (Pages Read per Month across Jan - Dec)
+      const monthlyPages = new Array(12).fill(0);
+      logs.forEach(log => {
+        if (log.timestamp && log.pagesRead) {
+          const date = new Date(log.timestamp);
+          if (!isNaN(date.getTime())) {
+            const monthIndex = date.getMonth(); // 0 to 11
+            monthlyPages[monthIndex] += Number(log.pagesRead) || 0;
+          }
+        }
+      });
+
+      const ctxPages = document.getElementById('pagesChart')?.getContext('2d');
+      if (ctxPages) {
+        if (pagesChartInstance) pagesChartInstance.destroy();
+
+        pagesChartInstance = new Chart(ctxPages, {
+          type: 'bar',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+              label: 'Pages Read',
+              data: monthlyPages,
+              backgroundColor: '#B86B55',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { 
+                grid: { color: 'rgba(0, 0, 0, 0.05)' }, 
+                beginAtZero: true,
+                ticks: { precision: 0 }
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // 2. Genre Breakdown Distribution
+      const genreCounts = {};
+      books.forEach(b => {
+        const cat = b.category && b.category.trim() !== '' ? b.category.trim() : 'Uncategorized';
+        genreCounts[cat] = (genreCounts[cat] || 0) + 1;
+      });
+
+      const labels = Object.keys(genreCounts);
+      const counts = Object.values(genreCounts);
+      const hasData = labels.length > 0;
+
+      const ctxGenre = document.getElementById('genreChart')?.getContext('2d');
+      if (ctxGenre) {
+        if (genreChartInstance) genreChartInstance.destroy();
+
+        genreChartInstance = new Chart(ctxGenre, {
+          type: 'doughnut',
+          data: {
+            labels: hasData ? labels : ['No Books Added'],
+            datasets: [{
+              data: hasData ? counts : [1],
+              backgroundColor: hasData 
+                ? ['#2C3E35', '#B86B55', '#D9CEBE', '#8C9A86', '#E0A96D', '#4A6572']
+                : ['#E9ECEF']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+              legend: { 
+                position: 'bottom',
+                labels: { boxWidth: 12 }
+              } 
+            }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
