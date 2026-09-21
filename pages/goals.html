@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goals & Challenges — Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- localForage & Storage Helper -->
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Hero Banner / Streak Section */
+    .hero-summary-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.75rem 2rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .streak-badge {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      background: rgba(184, 115, 51, 0.08);
+      border: 1px solid rgba(184, 115, 51, 0.2);
+      border-radius: 14px;
+      padding: 1rem 1.5rem;
+    }
+
+    .streak-number {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      line-height: 1;
+    }
+
+    /* Goals Grid */
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .goal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .goal-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .goal-icon-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .goal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--bg-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+
+    .goal-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .goal-remove-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+
+    .goal-remove-btn:hover {
+      color: #dc3545;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 1rem 0 0.5rem 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .claim-btn {
+      margin-top: 1rem;
+      width: 100%;
+      background: var(--color-accent);
+      color: #FFFFFF;
+      border: none;
+      padding: 0.65rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: opacity 0.2s ease;
+    }
+
+    .claim-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Achieved Goals Section */
+    .achieved-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .achieved-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .achieved-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(46, 125, 50, 0.1);
+      color: #2E7D32;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Empty States */
+    .empty-targets-box {
+      background: var(--bg-surface);
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    @media (max-width: 768px) {
+      .hero-summary-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item active"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <div>
+          <h1>Goals & Challenges</h1>
+          <p style="color: var(--text-muted); margin-top: 0.25rem;">Track user-defined reading milestones and celebrate progress.</p>
+        </div>
+        <button class="btn btn-primary" id="openModalBtn">
+          <i data-lucide="plus" style="width:16px;"></i> Add Target Goal
+        </button>
+      </header>
+
+      <!-- Streak & Overview Banner -->
+      <section class="hero-summary-card">
+        <div>
+          <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--color-accent); letter-spacing: 0.05em;">Personal Targets</div>
+          <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--color-primary); margin-top: 0.2rem;" id="activeTargetsCountLabel">0 Active Goals Set</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Targets are completely chosen by you to match your reading style.</p>
+        </div>
+
+        <div class="streak-badge">
+          <i data-lucide="flame" style="width:32px; height:32px; color: var(--color-accent);"></i>
+          <div>
+            <div class="streak-number" id="streakDisplay">0</div>
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Day Streak</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Targets Section -->
+      <h2 style="font-size: 1.3rem; margin-bottom: 1.25rem;">Active Targets</h2>
+      <div class="goals-grid" id="activeTargetsGrid"></div>
+
+      <!-- Achieved Goals Section -->
+      <h2 style="font-size: 1.3rem; margin-bottom: 1.25rem;">Achieved Milestones 🏆</h2>
+      <div class="achieved-grid" id="achievedGoalsGrid"></div>
+
+    </main>
+  </div>
+
+  <!-- Add New Goal Modal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="margin: 0; font-size: 1.25rem;">Add New Reading Target</h3>
+        <button class="close-modal-btn" id="closeModalBtn" type="button"><i data-lucide="x" style="width:20px;"></i></button>
+      </div>
+
+      <form id="addGoalForm">
+        <div class="form-group">
+          <label for="targetType">Goal Category</label>
+          <select id="targetType" class="select-field" style="width:100%; padding: 0.8rem; border-radius:8px; border:1px solid var(--border-color);" onchange="updateModalTargetFields(this.value)">
+            <option value="books">Annual Books Challenge</option>
+            <option value="dailyMins">Daily Reading Habit (Minutes)</option>
+            <option value="pages">Total Pages Marathon</option>
+            <option value="genres">Genre Exploration Target</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="targetTitle">Goal Title</label>
+          <input type="text" id="targetTitle" class="input-field" value="Annual Books Challenge" required>
+        </div>
+
+        <div class="form-group">
+          <label for="targetVal" id="targetValLabel">Target Value (Number of Books)</label>
+          <input type="number" id="targetVal" class="input-field" min="1" value="12" required>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Target</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      renderGoalsUI();
+      initModalHandlers();
+
+      window.addEventListener('foliaDataUpdated', renderGoalsUI);
+    });
+
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      });
+
+      const close = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      closeBtn?.addEventListener('click', close);
+      overlay?.addEventListener('click', close);
+    }
+
+    function renderGoalsUI() {
+      const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || { books: [], activeTargets: [], achievedGoals: [] };
+      const stats = (typeof calculateReadingStats === 'function') ? calculateReadingStats() : { completedCount: 0, totalPagesRead: 0, streakDays: 0 };
+
+      // Update Streak
+      document.getElementById('streakDisplay').textContent = stats.streakDays || userData.stats?.currentStreak || 0;
+
+      const activeTargets = userData.activeTargets || [];
+      const achievedGoals = userData.achievedGoals || [];
+
+      document.getElementById('activeTargetsCountLabel').textContent = `${activeTargets.length} Active Goal${activeTargets.length === 1 ? '' : 's'} Set`;
+
+      // Render Active Targets Grid
+      const grid = document.getElementById('activeTargetsGrid');
+      grid.innerHTML = '';
+
+      if (activeTargets.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-targets-box" style="grid-column: 1 / -1;">
+            <i data-lucide="target" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.35rem;">No Active Targets</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">You haven't added any goals yet. Create a target when you're ready!</p>
+            <button class="btn btn-primary" onclick="openAddTargetModal()"><i data-lucide="plus" style="width:16px;"></i> Add Your First Goal</button>
+          </div>
+        `;
+      } else {
+        activeTargets.forEach(target => {
+          let currentVal = 0;
+          let iconName = 'target';
+          let unitLabel = '';
+
+          // Calculate progress depending on target type
+          if (target.type === 'books') {
+            currentVal = stats.completedCount || 0;
+            iconName = 'book-open';
+            unitLabel = 'books';
+          } else if (target.type === 'dailyMins') {
+            const todayStr = new Date().toDateString();
+            const todayLogs = (userData.readingLogs || []).filter(l => l.timestamp && new Date(l.timestamp).toDateString() === todayStr);
+            currentVal = todayLogs.reduce((sum, l) => sum + (Number(l.durationMinutes) || 0), 0);
+            iconName = 'clock';
+            unitLabel = 'mins today';
+          } else if (target.type === 'pages') {
+            currentVal = stats.totalPagesRead || 0;
+            iconName = 'file-text';
+            unitLabel = 'pages';
+          } else if (target.type === 'genres') {
+            const genresSet = new Set((userData.books || []).map(b => b.genre || b.category).filter(Boolean));
+            currentVal = genresSet.size;
+            iconName = 'compass';
+            unitLabel = 'genres';
+          }
+
+          const targetVal = Number(target.targetValue) || 1;
+          const percent = Math.min(100, Math.round((currentVal / targetVal) * 100));
+
+          const card = document.createElement('div');
+          card.className = 'goal-card';
+          card.innerHTML = `
+            <div>
+              <div class="goal-card-header">
+                <div class="goal-icon-title">
+                  <div class="goal-icon"><i data-lucide="${iconName}" style="width:20px;"></i></div>
+                  <div>
+                    <div class="goal-title">${target.title}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${targetVal} ${unitLabel} target</div>
+                  </div>
+                </div>
+                <button class="goal-remove-btn" onclick="removeActiveTarget('${target.id}')" title="Delete Target"><i data-lucide="trash-2" style="width:16px;"></i></button>
+              </div>
+
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+              </div>
+              <div class="progress-stats">
+                <span><strong>${currentVal.toLocaleString()}</strong> / ${targetVal.toLocaleString()} ${unitLabel}</span>
+                <span><strong>${percent}%</strong></span>
+              </div>
+            </div>
+
+            ${percent >= 100 ? `<button class="claim-btn" onclick="claimAchievedGoal('${target.id}')"><i data-lucide="award" style="width:18px;"></i> Achieve Goal 🎉</button>` : ''}
+          `;
+          grid.appendChild(card);
+        });
+      }
+
+      // Render Achieved Goals Grid
+      const achievedGrid = document.getElementById('achievedGoalsGrid');
+      achievedGrid.innerHTML = '';
+
+      if (achievedGoals.length === 0) {
+        achievedGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; color: var(--text-muted); font-size: 0.9rem;">
+            No completed milestones yet. Finish active goals to display them here!
+          </div>
+        `;
+      } else {
+        achievedGoals.forEach(goal => {
+          const card = document.createElement('div');
+          card.className = 'achieved-card';
+          card.innerHTML = `
+            <div class="achieved-icon"><i data-lucide="trophy" style="width:22px;"></i></div>
+            <div>
+              <div style="font-weight:600; font-size:0.95rem;">${goal.title}</div>
+              <div style="font-size:0.8rem; color: var(--text-muted);">Reached target of ${goal.targetValue} • ${new Date(goal.achievedAt).toLocaleDateString()}</div>
+            </div>
+          `;
+          achievedGrid.appendChild(card);
+        });
+      }
+
+      lucide.createIcons();
+    }
+
+    // Modal Field Updater
+    function updateModalTargetFields(type) {
+      const titleInput = document.getElementById('targetTitle');
+      const valLabel = document.getElementById('targetValLabel');
+      const valInput = document.getElementById('targetVal');
+
+      if (type === 'books') {
+        titleInput.value = 'Annual Books Challenge';
+        valLabel.textContent = 'Target Number of Books';
+        valInput.value = 12;
+      } else if (type === 'dailyMins') {
+        titleInput.value = 'Daily Reading Habit';
+        valLabel.textContent = 'Minutes Per Day';
+        valInput.value = 20;
+      } else if (type === 'pages') {
+        titleInput.value = 'Total Pages Marathon';
+        valLabel.textContent = 'Target Pages';
+        valInput.value = 3000;
+      } else if (type === 'genres') {
+        titleInput.value = 'Genre Exploration Target';
+        valLabel.textContent = 'Target Genres Explored';
+        valInput.value = 5;
+      }
+    }
+
+    // Modal Logic
+    function openAddTargetModal() {
+      document.getElementById('goalModal')?.classList.add('active');
+    }
+
+    function initModalHandlers() {
+      const modal = document.getElementById('goalModal');
+      document.getElementById('openModalBtn')?.addEventListener('click', openAddTargetModal);
+      document.getElementById('closeModalBtn')?.addEventListener('click', () => modal?.classList.remove('active'));
+      document.getElementById('cancelModalBtn')?.addEventListener('click', () => modal?.classList.remove('active'));
+
+      document.getElementById('addGoalForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || { activeTargets: [] };
+        if (!userData.activeTargets) userData.activeTargets = [];
+
+        const newTarget = {
+          id: 'target-' + Date.now(),
+          type: document.getElementById('targetType').value,
+          title: document.getElementById('targetTitle').value.trim() || 'Custom Goal',
+          targetValue: parseInt(document.getElementById('targetVal').value, 10) || 1,
+          currentValue: 0,
+          createdAt: new Date().toISOString(),
+          status: 'active'
+        };
+
+        userData.activeTargets.push(newTarget);
+
+        if (typeof saveUserData === 'function') {
+          saveUserData(userData);
+        } else {
+          localStorage.setItem('folia_user', JSON.stringify(userData));
+        }
+
+        modal?.classList.remove('active');
+        renderGoalsUI();
+      });
+    }
+
+    // Remove Target
+    function removeActiveTarget(id) {
+      const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || { activeTargets: [] };
+      userData.activeTargets = (userData.activeTargets || []).filter(t => t.id !== id);
+
+      if (typeof saveUserData === 'function') {
+        saveUserData(userData);
+      } else {
+        localStorage.setItem('folia_user', JSON.stringify(userData));
+      }
+
+      renderGoalsUI();
+    }
+
+    // Claim / Complete Goal
+    function claimAchievedGoal(id) {
+      const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || { activeTargets: [], achievedGoals: [] };
+      
+      const targetIndex = (userData.activeTargets || []).findIndex(t => t.id === id);
+      if (targetIndex !== -1) {
+        const [target] = userData.activeTargets.splice(targetIndex, 1);
+        if (!userData.achievedGoals) userData.achievedGoals = [];
+
+        userData.achievedGoals.push({
+          ...target,
+          achievedAt: new Date().toISOString()
+        });
+
+        if (typeof saveUserData === 'function') {
+          saveUserData(userData);
+        } else {
+          localStorage.setItem('folia_user', JSON.stringify(userData));
+        }
+
+        renderGoalsUI();
+      }
+    }
+  </script>
+</body>
+</html>

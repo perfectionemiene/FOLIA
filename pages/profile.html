@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile - Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- localForage & Storage Helper -->
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Profile Component Styles */
+    .profile-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--bg-main);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-family: var(--font-heading);
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+
+    .profile-details { flex: 1; }
+
+    .profile-name {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .profile-bio {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    .profile-meta {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .profile-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Dynamic Badges Grid & Earned Logic */
+    .badges-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+      gap: 1rem;
+    }
+
+    .badge-item {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .badge-item.locked {
+      opacity: 0.45;
+      filter: grayscale(80%);
+    }
+
+    .badge-item.earned {
+      border-color: var(--color-accent);
+      background: #F4EFE6;
+    }
+
+    .badge-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent);
+      position: relative;
+    }
+
+    .badge-status-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      margin-top: 0.25rem;
+    }
+
+    .badge-item.earned .badge-status-tag {
+      background: var(--color-accent);
+      color: #fff;
+    }
+
+    .badge-item.locked .badge-status-tag {
+      background: var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .badge-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .badge-desc {
+      font-size: 0.725rem;
+      color: var(--text-muted);
+    }
+
+    /* Quotes Cards */
+    .quote-card {
+      background: var(--bg-main);
+      border-left: 3px solid var(--color-accent);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .quote-text {
+      font-style: italic;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+      padding-right: 1.5rem;
+    }
+
+    .quote-source {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .quote-delete-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s ease, color 0.2s ease;
+    }
+
+    .quote-delete-btn:hover {
+      opacity: 1;
+      color: #D9534F;
+    }
+
+    .empty-block-text {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-style: italic;
+    }
+
+    /* Inline Add Quote Box */
+    .add-quote-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .add-quote-form input, 
+    .add-quote-form textarea {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 900px) {
+      .profile-card { flex-direction: column; text-align: center; }
+      .profile-meta { justify-content: center; flex-wrap: wrap; }
+      .profile-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Mobile Top Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Dark Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Navigation Sidebar -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item active"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Profile Header -->
+      <div class="profile-card">
+        <div class="profile-avatar" id="avatarInitial">R</div>
+        <div class="profile-details">
+          <div class="profile-name" id="userNameDisplay">Reader</div>
+          <div class="profile-bio" id="userBioDisplay">Building a lifelong reading habit with Folia.</div>
+          
+          <div class="profile-meta">
+            <div class="profile-meta-item">
+              <i data-lucide="calendar" style="width:16px;"></i> Joined <span id="userJoinedDate">2026</span>
+            </div>
+            <div class="profile-meta-item">
+              <i data-lucide="book-marked" style="width:16px;"></i> <span id="metaBooksText">0 Books Completed</span>
+            </div>
+            <div class="profile-meta-item">
+              <i data-lucide="flame" style="width:16px;"></i> <span id="metaStreakText">0 Day Streak</span>
+            </div>
+          </div>
+        </div>
+        <a href="settings.html" class="btn btn-secondary">
+          <i data-lucide="pencil" style="width:16px;"></i> Edit Profile
+        </a>
+      </div>
+
+      <div class="profile-grid">
+        
+        <!-- Left Column -->
+        <div>
+          <!-- Badges Section -->
+          <div class="card">
+            <div class="card-title">
+              <div class="card-title-left">
+                <i data-lucide="award" style="width:20px; color: var(--color-accent);"></i> Achievements & Badges
+              </div>
+            </div>
+            
+            <div class="badges-grid" id="badgesContainer">
+              <!-- Dynamically populated badge cards -->
+            </div>
+          </div>
+
+          <!-- Favorite Quotes -->
+          <div class="card">
+            <div class="card-title">
+              <div class="card-title-left">
+                <i data-lucide="quote" style="width:20px; color: var(--color-accent);"></i> Favorite Quotes
+              </div>
+              <button type="button" class="btn btn-secondary" id="toggleQuoteFormBtn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                <i data-lucide="plus" style="width:14px;"></i> Add Quote
+              </button>
+            </div>
+
+            <!-- Inline Quote Form -->
+            <div id="quoteFormWrapper" style="display: none;">
+              <form class="add-quote-form" id="addQuoteForm">
+                <textarea id="quoteTextInput" rows="2" placeholder="Enter quote text..." required></textarea>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                  <input type="text" id="quoteAuthorInput" placeholder="Author (e.g. Marcus Aurelius)">
+                  <input type="text" id="quoteBookInput" placeholder="Book Title (optional)">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem;">
+                  <button type="button" class="btn btn-secondary" id="cancelQuoteBtn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Cancel</button>
+                  <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Save Quote</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="quotesContainer">
+              <div class="empty-block-text">No saved quotes yet. Add quotes above or from your reading notes!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <!-- Favorite Genres -->
+          <div class="card">
+            <div class="card-title">
+              <div class="card-title-left">
+                <i data-lucide="heart" style="width:20px; color: var(--color-accent);"></i> Favorite Genres
+              </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;" id="genreTags">
+              <div class="empty-block-text">Add books to your library to see your genre breakdown!</div>
+            </div>
+          </div>
+
+          <!-- Stats Overview -->
+          <div class="card">
+            <div class="card-title">
+              <div class="card-title-left">
+                <i data-lucide="bar-chart-2" style="width:20px; color: var(--color-accent);"></i> Quick Stats
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.9rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Pages Read:</span>
+                <strong id="statPagesDisplay">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Avg. Daily Time:</span>
+                <strong id="statDailyAvg">0 Mins</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Longest Streak:</span>
+                <strong id="statLongestStreak">0 Days</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Active Goals:</span>
+                <strong id="statActiveGoals">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      initQuoteForm();
+      renderProfileUI();
+
+      // Listen for updates across tabs
+      window.addEventListener('foliaDataUpdated', renderProfileUI);
+    });
+
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const openMenu = () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      };
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', openMenu);
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    function initQuoteForm() {
+      const toggleBtn = document.getElementById('toggleQuoteFormBtn');
+      const formWrapper = document.getElementById('quoteFormWrapper');
+      const cancelBtn = document.getElementById('cancelQuoteBtn');
+      const addQuoteForm = document.getElementById('addQuoteForm');
+
+      toggleBtn?.addEventListener('click', () => {
+        const isHidden = formWrapper.style.display === 'none';
+        formWrapper.style.display = isHidden ? 'block' : 'none';
+      });
+
+      cancelBtn?.addEventListener('click', () => {
+        formWrapper.style.display = 'none';
+      });
+
+      addQuoteForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = document.getElementById('quoteTextInput').value.trim();
+        const author = document.getElementById('quoteAuthorInput').value.trim();
+        const book = document.getElementById('quoteBookInput').value.trim();
+
+        if (!text) return;
+
+        const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || {};
+        if (!userData.quotes) userData.quotes = [];
+
+        userData.quotes.push({
+          id: Date.now().toString(),
+          text,
+          author: author || 'Unknown',
+          book: book || ''
+        });
+
+        if (typeof saveUserData === 'function') {
+          saveUserData(userData);
+        } else {
+          localStorage.setItem('folia_user', JSON.stringify(userData));
+        }
+
+        addQuoteForm.reset();
+        formWrapper.style.display = 'none';
+        renderProfileUI();
+      });
+    }
+
+    function removeQuote(quoteId) {
+      const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || {};
+      if (userData.quotes) {
+        userData.quotes = userData.quotes.filter(q => q.id !== quoteId);
+        if (typeof saveUserData === 'function') {
+          saveUserData(userData);
+        } else {
+          localStorage.setItem('folia_user', JSON.stringify(userData));
+        }
+        renderProfileUI();
+      }
+    }
+
+    function renderProfileUI() {
+      const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || { profile: {}, books: [], quotes: [], activeTargets: [] };
+      const stats = (typeof calculateReadingStats === 'function') ? calculateReadingStats() : { completedCount: 0, totalPagesRead: 0, streakDays: 0, avgDailyMins: 0, longestStreak: 0 };
+
+      const profile = userData.profile || {};
+      const books = userData.books || [];
+      const quotes = userData.quotes || profile.favoriteQuotes || [];
+      const targets = userData.activeTargets || userData.goals || [];
+
+      // Calculate unique genres
+      const uniqueGenres = [...new Set(books.map(b => (b.category || b.genre || '').trim()).filter(Boolean))];
+
+      // Profile Header Details
+      const userName = profile.name || 'Reader';
+      document.getElementById('userNameDisplay').textContent = userName;
+      document.getElementById('avatarInitial').textContent = userName.charAt(0).toUpperCase();
+      
+      if (profile.bio) {
+        document.getElementById('userBioDisplay').textContent = profile.bio;
+      }
+      if (profile.joinedDate) {
+        document.getElementById('userJoinedDate').textContent = profile.joinedDate;
+      }
+
+      document.getElementById('metaBooksText').textContent = `${stats.completedCount} ${stats.completedCount === 1 ? 'Book' : 'Books'} Completed`;
+      document.getElementById('metaStreakText').textContent = `${stats.streakDays} Day Streak`;
+
+      // Stats Box
+      document.getElementById('statPagesDisplay').textContent = (stats.totalPagesRead || 0).toLocaleString();
+      document.getElementById('statDailyAvg').textContent = `${stats.avgDailyMins || 0} Mins`;
+      document.getElementById('statLongestStreak').textContent = `${stats.longestStreak || stats.streakDays || 0} Days`;
+      document.getElementById('statActiveGoals').textContent = `${targets.length}`;
+
+      // Render Badges
+      renderBadges({
+        booksCompleted: stats.completedCount || 0,
+        totalLibraryBooks: books.length,
+        streak: stats.streakDays || 0,
+        genresCount: uniqueGenres.length,
+        hasGoals: targets.length > 0
+      });
+
+      // Render Genres & Quotes
+      renderGenres(uniqueGenres);
+      renderQuotes(quotes);
+    }
+
+    // Badge Requirements Engine
+    function renderBadges(stats) {
+      const badgesContainer = document.getElementById('badgesContainer');
+      if (!badgesContainer) return;
+
+      const badgeDefinitions = [
+        {
+          id: 'first_step',
+          name: 'First Step',
+          icon: 'sprout',
+          desc: 'Add your 1st book',
+          earned: stats.totalLibraryBooks >= 1
+        },
+        {
+          id: 'goal_setter',
+          name: 'Goal Setter',
+          icon: 'target',
+          desc: 'Set an active goal',
+          earned: stats.hasGoals
+        },
+        {
+          id: 'on_fire',
+          name: 'On Fire',
+          icon: 'flame',
+          desc: '10+ day reading streak',
+          earned: stats.streak >= 10
+        },
+        {
+          id: 'bookworm',
+          name: 'Bookworm',
+          icon: 'book-open',
+          desc: 'Finish 15+ books',
+          earned: stats.booksCompleted >= 15
+        },
+        {
+          id: 'explorer',
+          name: 'Explorer',
+          icon: 'compass',
+          desc: 'Read 3 different genres',
+          earned: stats.genresCount >= 3
+        }
+      ];
+
+      badgesContainer.innerHTML = badgeDefinitions.map(b => {
+        const isEarned = b.earned;
+        return `
+          <div class="badge-item ${isEarned ? 'earned' : 'locked'}">
+            <div class="badge-icon">
+              <i data-lucide="${isEarned ? b.icon : 'lock'}" style="width:20px;"></i>
+            </div>
+            <div class="badge-name">${b.name}</div>
+            <div class="badge-desc">${b.desc}</div>
+            <span class="badge-status-tag">${isEarned ? 'Unlocked' : 'Locked'}</span>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // Genre Tag Renderer
+    function renderGenres(genres) {
+      const container = document.getElementById('genreTags');
+      if (!container) return;
+
+      if (!genres || genres.length === 0) {
+        container.innerHTML = `<div class="empty-block-text">Add books to your library to see your genre breakdown!</div>`;
+        return;
+      }
+
+      container.innerHTML = genres.map(g => `
+        <span class="badge" style="background: var(--bg-main); font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          ${g}
+        </span>
+      `).join('');
+    }
+
+    // Quotes Renderer
+    function renderQuotes(quotes) {
+      const container = document.getElementById('quotesContainer');
+      if (!container) return;
+
+      if (!quotes || quotes.length === 0) {
+        container.innerHTML = `<div class="empty-block-text">No saved quotes yet. Add quotes above or from your reading notes!</div>`;
+        return;
+      }
+
+      container.innerHTML = quotes.map(q => `
+        <div class="quote-card">
+          <button type="button" class="quote-delete-btn" onclick="removeQuote('${q.id}')" title="Delete Quote">
+            <i data-lucide="trash-2" style="width:14px;"></i>
+          </button>
+          <div class="quote-text">“${q.text}”</div>
+          <div class="quote-source">— ${q.author || 'Unknown'}${q.book ? `, <em>${q.book}</em>` : ''}</div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

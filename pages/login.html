@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/login.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- localForage & Storage Helper -->
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+</head>
+
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <a href="../index.html" class="brand">
+          <i data-lucide="sprout"></i> Folia
+        </a>
+        <h2>Welcome back</h2>
+        <p>Pick up right where you left off.</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="input-field" placeholder="name@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+        </div>
+
+        <div class="auth-options">
+          <label class="remember-me">
+            <input type="checkbox" id="rememberMe"> Remember me
+          </label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-btn">Sign In</button>
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="signup.html">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const rememberCheckbox = document.getElementById('rememberMe');
+      const loginForm = document.getElementById('loginForm');
+
+      // Pre-fill email if previously remembered
+      const rememberedEmail = localStorage.getItem('folia_remembered_email');
+      if (rememberedEmail) {
+        emailInput.value = rememberedEmail;
+        rememberCheckbox.checked = true;
+      }
+
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const rememberMe = rememberCheckbox.checked;
+
+        const userData = (typeof getUserData === 'function') ? getUserData() : {};
+
+        // Update profile email and session info
+        userData.profile = userData.profile || {};
+        userData.profile.email = email;
+        userData.profile.isLoggedIn = true;
+
+        if (typeof saveUserData === 'function') {
+          saveUserData(userData);
+        } else {
+          localStorage.setItem('folia_user_data', JSON.stringify(userData));
+        }
+
+        // Save or clear "Remember Me" email preference
+        if (rememberMe) {
+          localStorage.setItem('folia_remembered_email', email);
+        } else {
+          localStorage.removeItem('folia_remembered_email');
+        }
+
+        window.location.href = 'dashboard.html';
+      });
+    });
+  </script>
+</body>
+</html>

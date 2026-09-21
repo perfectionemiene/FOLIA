@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading...</title>
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.88/dist/epub.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+<script src="../js/storage.js"></script>
+
+  <!-- PDF.js Text Layer Styling for Selectable Text -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf_viewer.min.css">
+
+  <style>
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .reader-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left, .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .book-meta-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--color-primary);
+      text-align: center;
+    }
+
+    .book-meta-author {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .control-dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 120%;
+      right: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 12px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      padding: 1rem;
+      width: 220px;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      z-index: 200;
+    }
+
+    .dropdown-menu.open {
+      display: flex;
+    }
+
+    .theme-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .theme-btn {
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .theme-btn.light { background: #FFFFFF; color: #1A1A1A; }
+    .theme-btn.sepia { background: #F4EBE1; color: #4A3E3D; }
+    .theme-btn.dark { background: #1A1A1A; color: #F5F5F7; }
+
+    .reader-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    #viewer {
+      width: 100%;
+      max-width: 800px;
+      height: 75vh;
+      background: var(--bg-surface);
+      border-radius: var(--radius-card, 12px);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* PDF Wrapper & Text Layer */
+    #pdfContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .pdf-page-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: auto;
+    }
+
+    .textLayer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      opacity: 0.25;
+      line-height: 1.0;
+    }
+
+    .reader-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+    }
+
+    .progress-bar-container {
+      flex: 1;
+      max-width: 400px;
+      margin: 0 1rem;
+      text-align: center;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--bg-main);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 0.3rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--color-accent);
+      transition: width 0.3s ease;
+    }
+
+    @media (max-width: 600px) {
+      .book-meta-author { display: none; }
+      .reader-main { padding: 0.5rem; }
+      #viewer { height: 80vh; }
+    }
+
+
+    /* PDF: keep each page within the available reader width */
+#pdfContainer {
+  padding: 12px;
+  box-sizing: border-box;
+  align-items: flex-start;
+}
+
+.pdf-page-wrapper {
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+#pdfCanvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Phone layout */
+@media (max-width: 600px) {
+  .reader-header {
+    min-height: 58px;
+    padding: 0.55rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .header-left,
+  .header-right {
+    gap: 0.4rem;
+  }
+
+  .book-meta-title {
+    max-width: 135px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
+  .book-meta-author {
+    display: none;
+  }
+
+  .reader-header .btn {
+    padding: 0.45rem 0.55rem !important;
+  }
+
+  .reader-main {
+    padding: 0.5rem;
+    align-items: stretch;
+  }
+
+  #viewer {
+    width: 100%;
+    max-width: none;
+    height: calc(100dvh - 135px);
+    min-height: 360px;
+    border-radius: 8px;
+  }
+
+  .reader-footer {
+    padding: 0.55rem 0.75rem;
+    gap: 0.45rem;
+  }
+
+  .reader-footer .btn {
+    padding: 0.5rem 0.6rem;
+    font-size: 0;
+    min-width: 42px;
+  }
+
+  .reader-footer .btn i {
+    width: 20px;
+    height: 20px;
+  }
+
+  .progress-bar-container {
+    margin: 0;
+    min-width: 0;
+  }
+
+  #pageProgressText {
+    display: block;
+    font-size: 0.72rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+  </style>
+</head>
+<body class="theme-light">
+
+  <header class="reader-header">
+    <div class="header-left">
+      <a href="library.html" class="btn btn-secondary" style="padding:0.4rem 0.75rem; font-size:0.85rem;">
+        <i data-lucide="arrow-left" style="width:16px;"></i> Library
+      </a>
+    </div>
+
+    <div>
+      <div class="book-meta-title" id="bookTitleDisplay">Reading</div>
+      <div class="book-meta-author" id="bookAuthorDisplay">Folia Reader</div>
+    </div>
+
+    <div class="header-right">
+      <div class="control-dropdown">
+        <button class="btn btn-secondary" id="themeDropdownToggle" style="padding:0.4rem 0.75rem; font-size:0.85rem;">
+          <i data-lucide="sun" style="width:16px;"></i> Theme
+        </button>
+        <div class="dropdown-menu" id="themeMenu">
+          <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Appearance</label>
+          <div class="theme-options">
+            <button class="theme-btn light" onclick="setReaderTheme('light')">Light</button>
+            <button class="theme-btn sepia" onclick="setReaderTheme('sepia')">Sepia</button>
+            <button class="theme-btn dark" onclick="setReaderTheme('dark')">Dark</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-dropdown">
+        <button class="btn btn-secondary" id="textDropdownToggle" style="padding:0.4rem 0.75rem; font-size:0.85rem;">
+          <i data-lucide="type" style="width:16px;"></i>
+        </button>
+        <div class="dropdown-menu" id="textMenu">
+          <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Font Size</label>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-secondary" style="flex:1" onclick="adjustFontSize(-10)">A-</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="adjustFontSize(10)">A+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="reader-main">
+    <div id="viewer"></div>
+  </main>
+
+  <footer class="reader-footer">
+    <button class="btn btn-secondary" id="prevPageBtn">
+      <i data-lucide="chevron-left" style="width:18px;"></i> Previous
+    </button>
+
+    <div class="progress-bar-container">
+      <span style="font-size:0.85rem; font-weight:600;" id="pageProgressText">Loading book...</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" id="nextPageBtn">
+      Next <i data-lucide="chevron-right" style="width:18px;"></i>
+    </button>
+  </footer>
+
+  <script src="../js/app.js"></script>
+  <script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+  }
+
+  let rendition = null;
+  let bookInstance = null;
+  let pdfDoc = null;
+  let pdfCurrentPage = 1;
+  let currentFontSize = 100;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const bookId = urlParams.get("id");
+  const bookTitle = urlParams.get("book") || "Untitled Book";
+  const bookAuthor = urlParams.get("author") || "Unknown Author";
+
+  document.getElementById("bookTitleDisplay").textContent = bookTitle;
+  document.getElementById("bookAuthorDisplay").textContent = `by ${bookAuthor}`;
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    lucide.createIcons();
+    initDropdowns();
+    await loadReaderBook();
+  });
+
+  function initDropdowns() {
+    const themeToggle = document.getElementById("themeDropdownToggle");
+    const textToggle = document.getElementById("textDropdownToggle");
+    const themeMenu = document.getElementById("themeMenu");
+    const textMenu = document.getElementById("textMenu");
+
+    themeToggle?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      textMenu?.classList.remove("open");
+      themeMenu?.classList.toggle("open");
+    });
+
+    textToggle?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      themeMenu?.classList.remove("open");
+      textMenu?.classList.toggle("open");
+    });
+
+    document.addEventListener("click", () => {
+      themeMenu?.classList.remove("open");
+      textMenu?.classList.remove("open");
+    });
+  }
+
+  async function loadReaderBook() {
+    if (!bookId) {
+      showError("No book ID was specified.");
+      return;
+    }
+
+    try {
+      const rawStored = await getBookFile(bookId);
+
+      if (!rawStored) {
+        throw new Error(
+          "The original book file was not found. Delete this book and upload it again."
+        );
+      }
+
+      const arrayBuffer = await storedFileToArrayBuffer(rawStored);
+
+      const userData = typeof getUserData === "function" ? getUserData() : {};
+      const currentBook = userData.books?.find(
+        (book) => String(book.id) === String(bookId)
+      );
+
+      const header = new Uint8Array(arrayBuffer.slice(0, 4));
+      const isPdfMagic =
+        header[0] === 0x25 &&
+        header[1] === 0x50 &&
+        header[2] === 0x44 &&
+        header[3] === 0x46;
+
+      const isPdf = currentBook?.format?.toLowerCase() === "pdf" || isPdfMagic;
+
+      if (isPdf) {
+        await renderPdfWithTextLayer(arrayBuffer);
+      } else {
+        await renderEpubBook(arrayBuffer);
+      }
+    } catch (error) {
+      console.error("Reader initialization error:", error);
+      showError(error.message || "This book could not be opened.");
+    }
+  }
+
+  async function storedFileToArrayBuffer(rawStored) {
+    if (rawStored instanceof ArrayBuffer) {
+      return rawStored;
+    }
+
+    if (rawStored instanceof Blob || rawStored instanceof File) {
+      return await rawStored.arrayBuffer();
+    }
+
+    // Supports older data-URL storage, but Blob/File storage is preferred.
+    if (typeof rawStored === "string" && rawStored.startsWith("data:")) {
+      const base64 = rawStored.split(",")[1];
+
+      if (!base64) {
+        throw new Error("The stored file data is incomplete.");
+      }
+
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let index = 0; index < binary.length; index++) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+
+      return bytes.buffer;
+    }
+
+    throw new Error("The stored book has an unsupported file format.");
+  }
+
+  async function renderEpubBook(arrayBuffer) {
+    const viewer = document.getElementById("viewer");
+    viewer.innerHTML = "";
+
+    if (!window.ePub) {
+      throw new Error("The EPUB reader library failed to load.");
+    }
+
+    if (!window.JSZip) {
+      throw new Error("The EPUB ZIP library failed to load.");
+    }
+
+    // EPUB files are ZIP archives and should begin with PK.
+    const header = new Uint8Array(arrayBuffer.slice(0, 4));
+    const isZip =
+      header[0] === 0x50 &&
+      header[1] === 0x4b &&
+      (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
+
+    if (!isZip) {
+      throw new Error(
+        "This file is not a valid EPUB archive. Its data may have been corrupted during upload or storage."
+      );
+    }
+
+    // Validate the archive before giving it to epub.js.
+    try {
+      const zip = await JSZip.loadAsync(arrayBuffer);
+      const mimetypeFile = zip.file("mimetype");
+      const containerFile = zip.file("META-INF/container.xml");
+
+      if (!mimetypeFile) {
+        throw new Error("The EPUB is missing its mimetype file.");
+      }
+
+      const mimetype = (await mimetypeFile.async("text")).trim();
+
+      if (mimetype !== "application/epub+zip") {
+        throw new Error("The uploaded ZIP file is not a standard EPUB.");
+      }
+
+      if (!containerFile) {
+        throw new Error("The EPUB is missing META-INF/container.xml.");
+      }
+    } catch (error) {
+      throw new Error(`Invalid or damaged EPUB: ${error.message}`);
+    }
+
+    try {
+      bookInstance = ePub(arrayBuffer);
+
+      rendition = bookInstance.renderTo(viewer, {
+        width: "100%",
+        height: "100%",
+        flow: "paginated",
+        manager: "default",
+
+        // Keep this false: uploaded EPUB files are untrusted content.
+        allowScriptedContent: false
+      });
+
+      await bookInstance.ready;
+      await rendition.display();
+
+      rendition.themes.fontSize(`${currentFontSize}%`);
+      applyEpubTheme(document.body.classList.contains("theme-dark")
+        ? "dark"
+        : document.body.classList.contains("theme-sepia")
+          ? "sepia"
+          : "light");
+
+      await restoreEpubAnnotations();
+
+      bookInstance.locations
+        .generate(1000)
+        .then(() => updateProgressText())
+        .catch((error) => {
+          console.warn("Could not calculate EPUB locations:", error);
+        });
+
+      rendition.on("relocated", updateProgressText);
+
+      rendition.on("selected", async (cfiRange, contents) => {
+        try {
+          const range = await bookInstance.getRange(cfiRange);
+          const selectedText = range?.toString().trim() || "";
+
+          if (!selectedText) return;
+
+          const note = window.prompt(
+            "Add a note for this highlight (optional):",
+            ""
+          );
+
+          // Cancel means do not create a highlight.
+          if (note === null) {
+            contents.window.getSelection().removeAllRanges();
+            return;
+          }
+
+          const annotation = {
+            id: createId(),
+            cfiRange,
+            text: selectedText,
+            note: note.trim(),
+            color: "#f4cf50",
+            createdAt: new Date().toISOString()
+          };
+
+          rendition.annotations.highlight(
+            annotation.cfiRange,
+            annotation,
+            () => console.log("Highlight selected:", annotation),
+            "folia-highlight",
+            {
+              fill: annotation.color,
+              "fill-opacity": "0.45",
+              "mix-blend-mode": "multiply"
+            }
+          );
+
+          await saveEpubAnnotation(annotation);
+          contents.window.getSelection().removeAllRanges();
+        } catch (error) {
+          console.error("Could not save highlight:", error);
+        }
+      });
+
+      document.getElementById("prevPageBtn").onclick = () => rendition?.prev();
+      document.getElementById("nextPageBtn").onclick = () => rendition?.next();
+    } catch (error) {
+      console.error("EPUB render error:", error);
+      throw new Error(`EPUB reader failed: ${error.message}`);
+    }
+  }
+
+  function createId() {
+    if (window.crypto?.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function annotationStorageKey() {
+    return `folia:annotations:${bookId}`;
+  }
+
+  async function getEpubAnnotations() {
+    if (!window.localforage || !bookId) return [];
+
+    return (await localforage.getItem(annotationStorageKey())) || [];
+  }
+
+  async function saveEpubAnnotation(annotation) {
+    if (!window.localforage || !bookId) return;
+
+    const annotations = await getEpubAnnotations();
+    annotations.push(annotation);
+
+    await localforage.setItem(annotationStorageKey(), annotations);
+  }
+
+  async function restoreEpubAnnotations() {
+    const annotations = await getEpubAnnotations();
+
+    annotations.forEach((annotation) => {
+      rendition.annotations.highlight(
+        annotation.cfiRange,
+        annotation,
+        () => console.log("Highlight selected:", annotation),
+        "folia-highlight",
+        {
+          fill: annotation.color || "#f4cf50",
+          "fill-opacity": "0.45",
+          "mix-blend-mode": "multiply"
+        }
+      );
+    });
+  }
+
+  async function renderPdfWithTextLayer(arrayBuffer) {
+    const viewer = document.getElementById("viewer");
+
+    viewer.innerHTML = `
+      <div id="pdfContainer">
+        <div class="pdf-page-wrapper" id="pdfPageWrapper">
+          <canvas id="pdfCanvas"></canvas>
+          <div id="textLayerContainer" class="textLayer"></div>
+        </div>
+      </div>
+    `;
+
+    pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    await drawPdfPage(pdfCurrentPage);
+
+    document.getElementById("prevPageBtn").onclick = () => {
+      if (pdfCurrentPage > 1) {
+        pdfCurrentPage--;
+        drawPdfPage(pdfCurrentPage);
+      }
+    };
+
+    document.getElementById("nextPageBtn").onclick = () => {
+      if (pdfCurrentPage < pdfDoc.numPages) {
+        pdfCurrentPage++;
+        drawPdfPage(pdfCurrentPage);
+      }
+    };
+  }
+   async function drawPdfPage(pageNum) {
+  if (!pdfDoc) return;
+
+  const page = await pdfDoc.getPage(pageNum);
+  const canvas = document.getElementById("pdfCanvas");
+  const textLayerDiv = document.getElementById("textLayerContainer");
+  const wrapper = document.getElementById("pdfPageWrapper");
+  const container = document.getElementById("pdfContainer");
+
+  if (!canvas || !textLayerDiv || !wrapper || !container) return;
+
+  const context = canvas.getContext("2d");
+
+  // Start with the PDF's natural dimensions.
+  const baseViewport = page.getViewport({ scale: 1 });
+
+  // Fit the page to the reader width, including on small phones.
+  const availableWidth = Math.max(container.clientWidth - 24, 240);
+  const cssScale = Math.min(1.5, availableWidth / baseViewport.width);
+  const viewport = page.getViewport({ scale: cssScale });
+
+  // Keep text/canvas sharp on high-DPI mobile screens.
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.floor(viewport.width * pixelRatio);
+  canvas.height = Math.floor(viewport.height * pixelRatio);
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
+
+  wrapper.style.width = `${viewport.width}px`;
+  wrapper.style.height = `${viewport.height}px`;
+
+  textLayerDiv.innerHTML = "";
+  textLayerDiv.style.width = `${viewport.width}px`;
+  textLayerDiv.style.height = `${viewport.height}px`;
+
+  await page.render({
+    canvasContext: context,
+    viewport,
+    transform: pixelRatio !== 1
+      ? [pixelRatio, 0, 0, pixelRatio, 0, 0]
+      : null
+  }).promise;
+
+  const textContent = await page.getTextContent();
+
+  pdfjsLib.renderTextLayer({
+    textContent,
+    container: textLayerDiv,
+    viewport,
+    textDivs: []
+  });
+
+  const totalPages = pdfDoc.numPages;
+  const progressPercent = Math.round((pageNum / totalPages) * 100);
+
+  document.getElementById("pageProgressText").textContent =
+    `Page ${pageNum} of ${totalPages} (${progressPercent}%)`;
+
+  document.getElementById("progressFill").style.width =
+    `${progressPercent}%`;
+} 
+
+  function setReaderTheme(themeName) {
+    document.body.className = `theme-${themeName}`;
+
+    if (rendition) {
+      applyEpubTheme(themeName);
+    }
+  }
+
+  function applyEpubTheme(themeName) {
+    if (!rendition) return;
+
+    const themes = {
+      light: {
+        body: {
+          background: "#FFFFFF !important",
+          color: "#1A1A1A !important"
+        }
+      },
+      sepia: {
+        body: {
+          background: "#F4EBE1 !important",
+          color: "#4A3E3D !important"
+        }
+      },
+      dark: {
+        body: {
+          background: "#1A1A1A !important",
+          color: "#F5F5F7 !important"
+        }
+      }
+    };
+
+    rendition.themes.default(themes[themeName] || themes.light);
+  }
+
+  function adjustFontSize(delta) {
+    currentFontSize = Math.max(70, Math.min(180, currentFontSize + delta));
+
+    if (rendition) {
+      rendition.themes.fontSize(`${currentFontSize}%`);
+    }
+  }
+
+  function updateProgressText(location) {
+    if (!bookInstance?.locations) return;
+
+    const totalPages = bookInstance.locations.total || 0;
+    let currentPage = 1;
+
+    if (location?.start?.cfi) {
+      const locationIndex = bookInstance.locations.locationFromCfi(
+        location.start.cfi
+      );
+
+      if (locationIndex >= 0) {
+        currentPage = locationIndex + 1;
+      }
+    }
+
+    const progressPercent =
+      totalPages > 0
+        ? Math.round((currentPage / totalPages) * 100)
+        : 0;
+
+    document.getElementById("pageProgressText").textContent =
+      totalPages > 0
+        ? `Page ${currentPage} of ${totalPages} (${progressPercent}%)`
+        : "Reading book...";
+
+    document.getElementById("progressFill").style.width =
+      `${progressPercent}%`;
+  }
+
+  function showError(message) {
+    document.getElementById("viewer").innerHTML = `
+      <div style="padding:2.5rem; text-align:center;">
+        <i data-lucide="alert-circle"
+          style="width:36px;height:36px;color:#e53e3e;margin-bottom:0.75rem;">
+        </i>
+
+        <h4 style="font-size:1.1rem;margin-bottom:0.4rem;">
+          Unable to Open Book
+        </h4>
+
+        <p style="color:var(--text-muted);font-size:0.9rem;max-width:400px;margin:0 auto 1.25rem;">
+          ${escapeHtml(message)}
+        </p>
+
+        <a href="add-book.html" class="btn btn-secondary"
+          style="font-size:0.85rem;display:inline-flex;align-items:center;gap:0.4rem;">
+          <i data-lucide="plus-circle" style="width:16px;"></i>
+          Re-upload Book
+        </a>
+      </div>
+    `;
+
+    const BOOK_FILE_PREFIX = "folia:book-file:";
+
+async function saveBookFile(bookId, file) {
+  if (!bookId) {
+    throw new Error("A book ID is required before saving its file.");
+  }
+
+  if (!(file instanceof Blob)) {
+    throw new Error("Book file must be a File or Blob.");
+  }
+
+  // Saves the untouched binary file to IndexedDB.
+  await localforage.setItem(`${BOOK_FILE_PREFIX}${bookId}`, file);
+}
+
+async function getBookFile(bookId) {
+  if (!bookId) return null;
+
+  return await localforage.getItem(`${BOOK_FILE_PREFIX}${bookId}`);
+}
+
+async function deleteBookFile(bookId) {
+  if (!bookId) return;
+
+  await localforage.removeItem(`${BOOK_FILE_PREFIX}${bookId}`);
+}
+
+    lucide.createIcons();
+    document.getElementById("pageProgressText").textContent = "Error";
+    document.getElementById("progressFill").style.width = "0%";
+  }
+
+  function escapeHtml(value) {
+    const element = document.createElement("div");
+    element.textContent = value;
+    return element.innerHTML;
+  }
+
+  let resizeTimer;
+
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+
+  resizeTimer = setTimeout(() => {
+    if (pdfDoc) {
+      drawPdfPage(pdfCurrentPage);
+    }
+
+    if (rendition) {
+      const viewer = document.getElementById("viewer");
+      rendition.resize(viewer.clientWidth, viewer.clientHeight);
+    }
+  }, 200);
+});
+</script>
+</body>
+</html>
