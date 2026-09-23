@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Details — Folia</title>
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    /* Book Details Page Specific Styles */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      text-decoration: none;
+      transition: var(--transition-smooth, all 0.2s ease);
+    }
+
+    .back-link:hover {
+      color: var(--color-primary);
+    }
+
+    /* Book Hero Banner */
+    .book-header-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      gap: 2.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .book-cover-large {
+      width: 180px;
+      height: 260px;
+      background: #E5E0D8;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-secondary);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .book-cover-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .book-details-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .book-title {
+      font-size: 2.25rem;
+      line-height: 1.2;
+      margin-bottom: 0.3rem;
+      color: var(--color-primary);
+    }
+
+    .book-author {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .meta-tags {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .meta-badge {
+      padding: 0.35rem 0.85rem;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+
+    .action-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-reader-launch {
+      background: var(--color-primary);
+      color: #FFFFFF;
+      padding: 0.85rem 1.75rem;
+      font-size: 1rem;
+      border-radius: var(--radius-button, 8px);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      font-weight: 600;
+      transition: var(--transition-smooth, all 0.2s ease);
+    }
+
+    .btn-reader-launch:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .progress-section {
+      background: var(--bg-main);
+      padding: 1.25rem;
+      border-radius: var(--radius-input, 8px);
+      border: 1px solid var(--border-color);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Details Content Grid */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+
+    .section-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--color-primary);
+    }
+
+    /* Memory Capsule Highlight */
+    .memory-capsule-card {
+      background: #F4EFE6;
+      border: 1px solid #D9CEBE;
+      border-radius: var(--radius-card);
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 2rem;
+    }
+
+    .capsule-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      color: var(--color-primary);
+      margin-bottom: 1rem;
+    }
+
+    .q-and-a {
+      margin-bottom: 1rem;
+    }
+
+    .q-and-a h4 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .q-and-a p {
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    /* Favorite Quotes styling */
+    .quote-box {
+      font-family: var(--font-quote, Georgia, serif);
+      font-size: 1.1rem;
+      font-style: italic;
+      padding: 1rem 1.25rem;
+      border-left: 3px solid var(--color-accent);
+      background: var(--bg-main);
+      border-radius: 0 10px 10px 0;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state-text {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    /* Edit Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: var(--color-primary);
+    }
+
+    .modal-field {
+      margin-bottom: 1rem;
+    }
+
+    .modal-field label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--text-main);
+    }
+
+    .modal-field input, .modal-field select, .modal-field textarea {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-input, 8px);
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: inherit;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .book-header-card { flex-direction: column; align-items: center; text-align: center; }
+      .details-grid { grid-template-columns: 1fr; }
+      .meta-tags { justify-content: center; }
+      .action-row { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item active"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <a href="library.html" class="back-link">
+        <i data-lucide="arrow-left" style="width:16px;"></i> Back to Library
+      </a>
+
+      <!-- Header Card -->
+      <div class="book-header-card">
+        <div class="book-cover-large" id="coverContainer">
+          <i data-lucide="book-open-check" style="width: 64px; height: 64px;"></i>
+        </div>
+
+        <div class="book-details-main">
+          <div>
+            <h1 class="book-title" id="bookTitleDisplay">Loading Book...</h1>
+            <div class="book-author" id="bookAuthorDisplay">by ...</div>
+            
+            <div class="meta-tags" id="metaTagsContainer">
+              <span class="meta-badge" id="genreTag">General</span>
+              <span class="meta-badge" id="pagesTag">0 Pages</span>
+              <span class="meta-badge" id="publisherTag">Publisher N/A</span>
+              <span class="meta-badge" id="ratingTag" style="color: #E6A100; font-weight: 600;">★ 5.0</span>
+            </div>
+
+            <!-- Launch Reader Action Button -->
+            <div class="action-row">
+              <a href="#" id="openReaderBtn" class="btn-reader-launch">
+                <i data-lucide="book-open" style="width:18px;"></i> Start / Continue Reading
+              </a>
+            </div>
+          </div>
+
+          <div class="progress-section">
+            <div class="progress-header">
+              <span>Status: <strong id="statusDisplay">To Read</strong></span>
+              <span id="progressText">0 / 0 pages (0%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details Content Grid -->
+      <div class="details-grid">
+        
+        <!-- Left Column -->
+        <div>
+          
+          <!-- Memory Capsule -->
+          <div class="memory-capsule-card">
+            <div class="capsule-header">
+              <i data-lucide="sprout"></i> Memory Capsule 🌿
+            </div>
+            <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom: 1.5rem;">
+              Preserve the personal context and mindset surrounding this book.
+            </p>
+
+            <div class="q-and-a">
+              <h4>Why did you pick up this book?</h4>
+              <p id="capsuleReason" class="empty-state-text">No reason specified yet.</p>
+            </div>
+
+            <div class="q-and-a">
+              <h4>What season of life are you in right now?</h4>
+              <p id="capsuleSeason" class="empty-state-text">No season specified yet.</p>
+            </div>
+
+            <div class="q-and-a">
+              <h4>Key Takeaway / Life Impact</h4>
+              <p id="capsuleImpact" class="empty-state-text">No takeaway recorded yet.</p>
+            </div>
+          </div>
+
+          <!-- Personal Notes -->
+          <div class="section-card">
+            <h3 class="section-title"><i data-lucide="file-text" style="width:20px;"></i> Personal Notes</h3>
+            <p id="personalNotesDisplay" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7;">
+              No personal notes added yet. Click "Edit Details" to record your thoughts!
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          
+          <!-- Saved Quotes -->
+          <div class="section-card">
+            <h3 class="section-title"><i data-lucide="quote" style="width:20px;"></i> Favorite Quotes</h3>
+            <div id="quotesContainer">
+              <div class="empty-state-text">No quotes saved for this book yet.</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="section-card">
+            <h3 class="section-title">Manage</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <button class="btn btn-secondary" id="editBookBtn" style="width: 100%; justify-content: flex-start;">
+                <i data-lucide="edit-2" style="width:16px;"></i> Edit Details
+              </button>
+              <button class="btn btn-secondary" id="removeBookBtn" style="width: 100%; justify-content: flex-start; color: var(--color-error, #d9534f);">
+                <i data-lucide="trash-2" style="width:16px;"></i> Remove from Library
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Edit Details Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-card">
+      <h3>Edit Book Progress & Details</h3>
+      
+      <div class="modal-field">
+        <label for="editCurrentPage">Current Page</label>
+        <input type="number" id="editCurrentPage" min="0">
+      </div>
+
+      <div class="modal-field">
+        <label for="editTotalPages">Total Pages</label>
+        <input type="number" id="editTotalPages" min="1">
+      </div>
+
+      <div class="modal-field">
+        <label for="editStatus">Status</label>
+        <select id="editStatus">
+          <option value="want-to-read">To Read</option>
+          <option value="reading">Currently Reading</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      <div class="modal-field">
+        <label for="editNotes">Personal Notes</label>
+        <textarea id="editNotes" rows="4"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    let currentBook = null;
+    let libraryData = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      loadBookDetails();
+      setupEventListeners();
+    });
+
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const openMenu = () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      };
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', openMenu);
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    function loadBookDetails() {
+      libraryData = typeof getLibrary === 'function' 
+        ? getLibrary() 
+        : (JSON.parse(localStorage.getItem('folia_library')) || []);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const bookId = urlParams.get('id');
+      const titleParam = urlParams.get('book');
+      const authorParam = urlParams.get('author');
+
+      // Find target book from storage
+      if (bookId) {
+        currentBook = libraryData.find(b => String(b.id) === String(bookId));
+      } else if (titleParam) {
+        const decodedTitle = decodeURIComponent(titleParam);
+        currentBook = libraryData.find(b => b.title?.toLowerCase() === decodedTitle.toLowerCase());
+      }
+
+      // Default fallback mock if book doesn't exist in local storage yet
+      if (!currentBook) {
+        currentBook = {
+          id: bookId || Date.now(),
+          title: titleParam ? decodeURIComponent(titleParam) : 'Atomic Habits',
+          author: authorParam ? decodeURIComponent(authorParam) : 'James Clear',
+          genre: 'Self-Improvement',
+          totalPages: 320,
+          currentPage: 220,
+          publisher: 'Avery Publisher',
+          rating: '4.8',
+          status: 'reading',
+          coverUrl: '',
+          notes: 'The concept of 1% improvements compounding over time is applicable not just to habits, but to coding and design.',
+          capsuleReason: 'Wanted to refine my daily reading consistency while building Folia.',
+          capsuleSeason: 'Late August 2026 • Building modern web apps and focusing on growth.',
+          capsuleImpact: 'Systems are vastly superior to goals. You don\'t rise to the level of your goals, you fall to the level of your systems.',
+          quotes: [
+            'You do not rise to the level of your goals. You fall to the level of your systems.',
+            'Every action you take is a vote for the type of person you wish to become.'
+          ]
+        };
+      }
+
+      renderBookUI(currentBook);
+    }
+
+    function renderBookUI(book) {
+      document.getElementById('bookTitleDisplay').textContent = book.title;
+      document.getElementById('bookAuthorDisplay').textContent = `by ${book.author}`;
+
+      // Cover render
+      const coverContainer = document.getElementById('coverContainer');
+      if (book.coverUrl) {
+        coverContainer.innerHTML = `<img src="${book.coverUrl}" alt="${book.title} Cover">`;
+      } else {
+        coverContainer.innerHTML = `<i data-lucide="book-open-check" style="width: 64px; height: 64px;"></i>`;
+      }
+
+      // Meta Badges
+      document.getElementById('genreTag').textContent = book.genre || 'General';
+      document.getElementById('pagesTag').textContent = `${book.totalPages || book.pages || 0} Pages`;
+      document.getElementById('publisherTag').textContent = book.publisher || 'Publisher N/A';
+      document.getElementById('ratingTag').textContent = `★ ${book.rating || '5.0'}`;
+
+      // Progress bar & Status
+      const total = Number(book.totalPages || book.pages) || 0;
+      const current = Number(book.currentPage) || 0;
+      const percentage = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+
+      const formatStatus = (st) => {
+        if (st === 'reading') return 'Currently Reading';
+        if (st === 'completed' || st === 'finished') return 'Completed';
+        return 'To Read';
+      };
+
+      document.getElementById('statusDisplay').textContent = formatStatus(book.status);
+      document.getElementById('progressText').textContent = `${current} / ${total} pages (${percentage}%)`;
+      document.getElementById('progressBarFill').style.width = `${percentage}%`;
+
+      // Memory Capsule
+      if (book.capsuleReason) document.getElementById('capsuleReason').textContent = book.capsuleReason;
+      if (book.capsuleSeason) document.getElementById('capsuleSeason').textContent = book.capsuleSeason;
+      if (book.capsuleImpact) document.getElementById('capsuleImpact').textContent = book.capsuleImpact;
+
+      // Personal Notes
+      if (book.notes) {
+        document.getElementById('personalNotesDisplay').textContent = book.notes;
+        document.getElementById('personalNotesDisplay').classList.remove('empty-state-text');
+      }
+
+      // Quotes
+      const quotesContainer = document.getElementById('quotesContainer');
+      if (book.quotes && book.quotes.length > 0) {
+        quotesContainer.innerHTML = book.quotes.map(q => `
+          <div class="quote-box">“${q}”</div>
+        `).join('');
+      } else {
+        quotesContainer.innerHTML = `<div class="empty-state-text">No quotes saved for this book yet.</div>`;
+      }
+
+      // Reader Launch URL
+      const readerBtn = document.getElementById('openReaderBtn');
+      if (readerBtn) {
+        readerBtn.href = `reader.html?book=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author)}`;
+      }
+
+      lucide.createIcons();
+    }
+
+    function setupEventListeners() {
+      const editModal = document.getElementById('editModal');
+      const editBtn = document.getElementById('editBookBtn');
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      const saveBtn = document.getElementById('saveEditBtn');
+      const removeBtn = document.getElementById('removeBookBtn');
+
+      // Open Modal
+      editBtn?.addEventListener('click', () => {
+        document.getElementById('editCurrentPage').value = currentBook.currentPage || 0;
+        document.getElementById('editTotalPages').value = currentBook.totalPages || currentBook.pages || 0;
+        document.getElementById('editStatus').value = currentBook.status || 'want-to-read';
+        document.getElementById('editNotes').value = currentBook.notes || '';
+        editModal.classList.add('active');
+      });
+
+      // Close Modal
+      cancelBtn?.addEventListener('click', () => {
+        editModal.classList.remove('active');
+      });
+
+      // Save Modal Changes
+      saveBtn?.addEventListener('click', () => {
+        currentBook.currentPage = Number(document.getElementById('editCurrentPage').value) || 0;
+        currentBook.totalPages = Number(document.getElementById('editTotalPages').value) || 0;
+        currentBook.status = document.getElementById('editStatus').value;
+        currentBook.notes = document.getElementById('editNotes').value;
+
+        // Auto-complete if max page reached
+        if (currentBook.currentPage >= currentBook.totalPages && currentBook.totalPages > 0) {
+          currentBook.status = 'completed';
+        }
+
+        // Save back to localStorage
+        const index = libraryData.findIndex(b => String(b.id) === String(currentBook.id));
+        if (index !== -1) {
+          libraryData[index] = currentBook;
+        } else {
+          libraryData.push(currentBook);
+        }
+        localStorage.setItem('folia_library', JSON.stringify(libraryData));
+
+        renderBookUI(currentBook);
+        editModal.classList.remove('active');
+      });
+
+      // Remove Book
+      removeBtn?.addEventListener('click', () => {
+        if (confirm(`Are you sure you want to remove "${currentBook.title}" from your library?`)) {
+          libraryData = libraryData.filter(b => String(b.id) !== String(currentBook.id));
+          localStorage.setItem('folia_library', JSON.stringify(libraryData));
+          window.location.href = 'library.html';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

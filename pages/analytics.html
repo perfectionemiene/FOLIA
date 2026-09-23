@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics | Folia</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B87333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 20h10'/><path d='M10 20c5.5-2.5.8-6.4 3-10'/><path d='M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z'/><path d='M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4.2.8-4.9 2z'/></svg>">
+
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- localForage & Storage Helper -->
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="../js/storage.js"></script>
+
+  <style>
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    /* Key Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    /* Target Pace Section */
+    .targets-summary-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .section-header-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pace-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .pace-card {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .pace-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .pace-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.75rem 0 0.35rem 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .empty-pace-cta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-main);
+      border: 1px dashed var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card, 16px);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: var(--color-primary);
+    }
+
+    .chart-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { 
+        grid-template-columns: 1fr; 
+      }
+      .empty-pace-cta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-header">
+      <a href="../index.html" class="sidebar-brand">
+        <i data-lucide="sprout"></i> Folia
+      </a>
+      <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Dark Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div>
+        <div class="sidebar-top">
+          <a href="../index.html" class="sidebar-brand">
+            <i data-lucide="sprout"></i> Folia
+          </a>
+          <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close Navigation">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+          <li class="nav-item"><a href="library.html"><i data-lucide="book-open"></i> Library</a></li>
+          <li class="nav-item"><a href="add-book.html"><i data-lucide="plus-circle"></i> Add Book</a></li>
+          <li class="nav-item active"><a href="analytics.html"><i data-lucide="bar-chart-3"></i> Analytics</a></li>
+          <li class="nav-item"><a href="goals.html"><i data-lucide="target"></i> Goals</a></li>
+          <li class="nav-item"><a href="profile.html"><i data-lucide="user"></i> Profile</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="settings.html"><i data-lucide="settings"></i> Settings</a></li>
+          <li class="nav-item"><a href="../index.html"><i data-lucide="log-out"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <header class="page-header">
+        <h1>Reading Analytics</h1>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;">Insights into your reading habits, target progress, and volume.</p>
+      </header>
+
+      <!-- Key Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Stories/Books Read</div>
+          <div class="metric-value" id="analyticsTotalBooks">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Time Read</div>
+          <div class="metric-value" id="analyticsTotalTime">0m</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Daily Avg. Reading</div>
+          <div class="metric-value" id="analyticsDailyAvg">0 mins</div>
+        </div>
+      </div>
+
+      <!-- Target Pace & Breakdown Section -->
+      <div class="targets-summary-section">
+        <div class="section-header-title">
+          <i data-lucide="target" style="width:20px; color: var(--color-accent);"></i> Goal Pace & Commitments
+        </div>
+        <div id="targetsPaceContainer"></div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <!-- Monthly Reading Volume -->
+        <div class="chart-card">
+          <div class="chart-title">Stories Read per Month</div>
+          <div class="chart-container">
+            <canvas id="storiesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Genres breakdown -->
+        <div class="chart-card">
+          <div class="chart-title">Genre Breakdown</div>
+          <div class="chart-container">
+            <canvas id="genreChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+
+  <script>
+    let storiesChartInstance = null;
+    let genreChartInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMobileNav();
+      refreshAnalytics();
+
+      // Listen for updates from other tabs/components
+      window.addEventListener('foliaDataUpdated', refreshAnalytics);
+    });
+
+    function initMobileNav() {
+      const toggleBtn = document.getElementById('mobileNavToggle');
+      const closeBtn = document.getElementById('mobileNavClose');
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const closeMenu = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('active');
+      };
+
+      toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('active');
+      });
+
+      closeBtn?.addEventListener('click', closeMenu);
+      overlay?.addEventListener('click', closeMenu);
+    }
+
+    function refreshAnalytics() {
+      const userData = (typeof getUserData === 'function') ? getUserData() : JSON.parse(localStorage.getItem('folia_user')) || { books: [], readingLogs: [], activeTargets: [] };
+      const books = userData.books || (typeof getLibrary === 'function' ? getLibrary() : JSON.parse(localStorage.getItem('folia_library'))) || [];
+      const logs = userData.readingLogs || [];
+
+      // Calculate completed books/stories
+      const completedBooks = books.filter(b => b.completed || b.status === 'completed');
+      const completedCount = completedBooks.length;
+
+      // Calculate total reading time
+      const totalMinutes = logs.reduce((sum, l) => sum + (Number(l.durationMinutes) || Number(l.minutes) || 0), 0) || (userData.stats?.totalReadingMinutes || 0);
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      const formattedTime = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+      // Metric Cards Update
+      const totalBooksEl = document.getElementById('analyticsTotalBooks');
+      if (totalBooksEl) totalBooksEl.textContent = completedCount;
+
+      const totalTimeEl = document.getElementById('analyticsTotalTime');
+      if (totalTimeEl) totalTimeEl.textContent = formattedTime;
+
+      // Daily Average Calculation
+      const uniqueDays = new Set(logs.map(l => l.timestamp ? new Date(l.timestamp).toDateString() : null)).size || 1;
+      const dailyAvgMins = logs.length > 0 ? Math.round(totalMinutes / uniqueDays) : 0;
+
+      const dailyAvgEl = document.getElementById('analyticsDailyAvg');
+      if (dailyAvgEl) dailyAvgEl.textContent = `${dailyAvgMins} mins`;
+
+      renderTargetPace(userData, completedCount);
+      renderCharts(userData, books, logs);
+    }
+
+    function renderTargetPace(userData, completedCount) {
+      const paceContainer = document.getElementById('targetsPaceContainer');
+      if (!paceContainer) return;
+
+      const activeTargets = (userData.activeTargets || []).filter(t => t.type !== 'pages');
+
+      if (activeTargets.length === 0) {
+        paceContainer.innerHTML = `
+          <div class="empty-pace-cta">
+            <div>
+              <div style="font-weight: 600; font-size: 1rem; color: var(--color-primary);">No active reading goals set</div>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">Set target goals on the Goals page to unlock personalized progress metrics here.</p>
+            </div>
+            <a href="goals.html" class="btn btn-primary" style="white-space: nowrap;"><i data-lucide="plus" style="width:16px;"></i> Configure Goals</a>
+          </div>
+        `;
+      } else {
+        let cardsHtml = '<div class="pace-cards-grid">';
+
+        activeTargets.forEach(target => {
+          let currentVal = 0;
+          let unitLabel = '';
+
+          if (target.type === 'books' || target.type === 'stories') {
+            currentVal = completedCount;
+            unitLabel = 'stories';
+          } else if (target.type === 'dailyMins') {
+            const todayStr = new Date().toDateString();
+            const todayLogs = (userData.readingLogs || []).filter(l => l.timestamp && new Date(l.timestamp).toDateString() === todayStr);
+            currentVal = todayLogs.reduce((sum, l) => sum + (Number(l.durationMinutes) || Number(l.minutes) || 0), 0);
+            unitLabel = 'mins today';
+          } else if (target.type === 'genres') {
+            const genresSet = new Set((userData.books || []).map(b => b.genre || b.category).filter(Boolean));
+            currentVal = genresSet.size;
+            unitLabel = 'genres';
+          }
+
+          const targetVal = Number(target.targetValue) || 1;
+          const percent = Math.min(100, Math.round((currentVal / targetVal) * 100));
+
+          cardsHtml += `
+            <div class="pace-card">
+              <div class="pace-title">${target.title}</div>
+              <div class="pace-val">${currentVal.toLocaleString()} <span style="font-size:0.85rem; font-weight:400; color:var(--text-muted);">/ ${targetVal.toLocaleString()} ${unitLabel}</span></div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted);">
+                <span>Target Progress</span>
+                <span><strong>${percent}%</strong></span>
+              </div>
+            </div>
+          `;
+        });
+
+        cardsHtml += '</div>';
+        paceContainer.innerHTML = cardsHtml;
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderCharts(userData, books, logs) {
+      // Monthly Stories Read Volume
+      const monthlyStories = new Array(12).fill(0);
+
+      // Count stories finished per month based on finished date or log entries
+      books.forEach(b => {
+        if (b.completed || b.status === 'completed') {
+          const dateStr = b.dateCompleted || b.finishedAt || b.updatedAt;
+          if (dateStr) {
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+              monthlyStories[date.getMonth()] += 1;
+            }
+          }
+        }
+      });
+
+      const ctxStories = document.getElementById('storiesChart')?.getContext('2d');
+      if (ctxStories) {
+        if (storiesChartInstance) storiesChartInstance.destroy();
+
+        storiesChartInstance = new Chart(ctxStories, {
+          type: 'bar',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+              label: 'Stories Read',
+              data: monthlyStories,
+              backgroundColor: '#B86B55',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { 
+                grid: { color: 'rgba(0, 0, 0, 0.05)' }, 
+                beginAtZero: true,
+                ticks: { precision: 0 }
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // Genre Breakdown Distribution calculated directly from user books
+      const genreCounts = {};
+      books.forEach(b => {
+        const cat = (b.category || b.genre || '').trim() || 'Uncategorized';
+        genreCounts[cat] = (genreCounts[cat] || 0) + 1;
+      });
+
+      const labels = Object.keys(genreCounts);
+      const counts = Object.values(genreCounts);
+      const hasData = labels.length > 0;
+
+      const ctxGenre = document.getElementById('genreChart')?.getContext('2d');
+      if (ctxGenre) {
+        if (genreChartInstance) genreChartInstance.destroy();
+
+        genreChartInstance = new Chart(ctxGenre, {
+          type: 'doughnut',
+          data: {
+            labels: hasData ? labels : ['No Books Added'],
+            datasets: [{
+              data: hasData ? counts : [1],
+              backgroundColor: hasData 
+                ? ['#2C3E35', '#B86B55', '#D9CEBE', '#8C9A86', '#E0A96D', '#4A6572']
+                : ['#E9ECEF']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+              legend: { 
+                position: 'bottom',
+                labels: { boxWidth: 12 }
+              } 
+            }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
