@@ -56,7 +56,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.75rem 1.5rem;
+      padding: 0.5rem 1.25rem;
       background: var(--bg-surface, #1e1e1e);
       border-bottom: 1px solid var(--border-color, #333);
       position: fixed;
@@ -66,25 +66,68 @@
       height: 60px;
       box-sizing: border-box;
       z-index: 100;
+      gap: 0.75rem;
     }
 
-    .header-left, .header-right {
+    .header-left, .header-center, .header-right {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .header-left {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+
+    .book-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
     }
 
     .book-meta-title {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--color-primary, #ffffff);
-      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .book-meta-author {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--text-muted, #aaa);
-      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Quick Header Actions */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color, #333);
+      color: var(--text-main, #ffffff);
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--color-accent, #3b82f6);
     }
 
     .control-dropdown {
@@ -293,6 +336,44 @@
       background: rgba(255,255,255,0.08);
     }
 
+    /* Text Selection Floating Toolbar */
+    .selection-popover {
+      position: fixed;
+      z-index: 300;
+      display: none;
+      background: var(--bg-surface, #1e1e1e);
+      border: 1px solid var(--border-color, #333);
+      border-radius: 24px;
+      padding: 0.35rem 0.6rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      gap: 0.35rem;
+      align-items: center;
+      transform: translate(-50%, -100%);
+    }
+
+    .selection-popover.active {
+      display: flex;
+    }
+
+    .selection-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-main, #fff);
+      padding: 0.4rem 0.6rem;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: background 0.15s ease;
+    }
+
+    .selection-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
     /* PDF Wrapper & Text Layer */
     #pdfContainer {
       position: relative;
@@ -386,26 +467,34 @@
       transform: scale(1.25);
     }
 
+    /* Responsive scaling across mobile devices */
+    @media (max-width: 768px) {
+      .action-btn .btn-label {
+        display: none;
+      }
+      .action-btn {
+        padding: 0.45rem;
+      }
+    }
+
     @media (max-width: 600px) {
       .book-meta-author { display: none; }
 
       .reader-header {
-        min-height: 58px;
-        padding: 0.55rem 0.75rem;
-        gap: 0.5rem;
+        padding: 0.5rem 0.6rem;
+        gap: 0.35rem;
       }
 
-      .header-left, .header-right { gap: 0.4rem; }
+      .header-left, .header-right { gap: 0.3rem; }
 
       .book-meta-title {
-        max-width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 0.85rem;
+        max-width: 110px;
+        font-size: 0.82rem;
       }
 
-      .reader-header .btn { padding: 0.45rem 0.55rem !important; }
+      .reader-header .btn, .action-btn { 
+        padding: 0.4rem 0.5rem !important; 
+      }
 
       .page-turn-zone {
         width: 40px;
@@ -445,22 +534,37 @@
 
   <header class="reader-header">
     <div class="header-left">
-      <a href="library.html" class="btn btn-secondary" style="padding:0.4rem 0.75rem; font-size:0.85rem;">
-        <i data-lucide="arrow-left" style="width:16px;"></i> Library
+      <a href="library.html" class="btn btn-secondary" style="padding:0.4rem 0.65rem; font-size:0.85rem;" title="Library">
+        <i data-lucide="arrow-left" style="width:16px;"></i>
       </a>
-      <button class="btn btn-secondary" id="tocBtn" style="padding:0.4rem 0.75rem; font-size:0.85rem;" title="Contents">
+      <button class="btn btn-secondary" id="tocBtn" style="padding:0.4rem 0.65rem; font-size:0.85rem;" title="Contents">
         <i data-lucide="list" style="width:16px;"></i>
       </button>
+      <div class="book-info">
+        <div class="book-meta-title" id="bookTitleDisplay">Reading</div>
+        <div class="book-meta-author" id="bookAuthorDisplay">Folia Reader</div>
+      </div>
     </div>
 
-    <div>
-      <div class="book-meta-title" id="bookTitleDisplay">Reading</div>
-      <div class="book-meta-author" id="bookAuthorDisplay">Folia Reader</div>
+    <!-- Quick Reader Actions in Header -->
+    <div class="header-center header-actions">
+      <button class="action-btn" id="btnQuickHighlight" onmousedown="preventSelectionLoss(event)" onclick="handleQuickAction('highlight')" title="Highlight Selection">
+        <i data-lucide="highlighter" style="width:15px; color:#f59e0b;"></i>
+        <span class="btn-label">Highlight</span>
+      </button>
+      <button class="action-btn" id="btnQuickNote" onmousedown="preventSelectionLoss(event)" onclick="handleQuickAction('note')" title="Add Note">
+        <i data-lucide="sticky-note" style="width:15px; color:#10b981;"></i>
+        <span class="btn-label">Note</span>
+      </button>
+      <button class="action-btn" id="btnQuickQuote" onmousedown="preventSelectionLoss(event)" onclick="handleQuickAction('quote')" title="Save Favorite Quote">
+        <i data-lucide="quote" style="width:15px; color:#3b82f6;"></i>
+        <span class="btn-label">Quote</span>
+      </button>
     </div>
 
     <div class="header-right">
       <div class="control-dropdown">
-        <button class="btn btn-secondary" id="navDropdownToggle" style="padding:0.4rem 0.75rem; font-size:0.85rem;" title="View Mode">
+        <button class="btn btn-secondary" id="navDropdownToggle" style="padding:0.4rem 0.65rem; font-size:0.85rem;" title="View Mode">
           <i data-lucide="book-open" style="width:16px;"></i>
         </button>
         <div class="dropdown-menu" id="navMenu">
@@ -475,7 +579,7 @@
       </div>
 
       <div class="control-dropdown">
-        <button class="btn btn-secondary" id="themeDropdownToggle" style="padding:0.4rem 0.75rem; font-size:0.85rem;" title="Theme">
+        <button class="btn btn-secondary" id="themeDropdownToggle" style="padding:0.4rem 0.65rem; font-size:0.85rem;" title="Theme">
           <i id="themeHeaderIcon" data-lucide="sun" style="width:16px;"></i>
         </button>
         <div class="dropdown-menu" id="themeMenu">
@@ -489,7 +593,7 @@
       </div>
 
       <div class="control-dropdown">
-        <button class="btn btn-secondary" id="textDropdownToggle" style="padding:0.4rem 0.75rem; font-size:0.85rem;" title="Typography">
+        <button class="btn btn-secondary" id="textDropdownToggle" style="padding:0.4rem 0.65rem; font-size:0.85rem;" title="Typography">
           <i data-lucide="type" style="width:16px;"></i>
         </button>
         <div class="dropdown-menu" id="textMenu">
@@ -535,6 +639,19 @@
       <li class="toc-item">Loading chapters...</li>
     </ul>
   </aside>
+
+  <!-- Selection Toolbar Popover -->
+  <div class="selection-popover" id="selectionPopover">
+    <button class="selection-btn" onmousedown="preventSelectionLoss(event)" onclick="saveSelectedText('highlight')">
+      <i data-lucide="highlighter" style="width:14px;color:#f59e0b;"></i> Highlight
+    </button>
+    <button class="selection-btn" onmousedown="preventSelectionLoss(event)" onclick="saveSelectedText('quote')">
+      <i data-lucide="quote" style="width:14px;color:#3b82f6;"></i> Save Quote
+    </button>
+    <button class="selection-btn" onmousedown="preventSelectionLoss(event)" onclick="saveSelectedText('note')">
+      <i data-lucide="sticky-note" style="width:14px;color:#10b981;"></i> Add Note
+    </button>
+  </div>
 
   <main class="reader-main">
     <div class="page-turn-zone left" onclick="handlePrevPage()" title="Previous Page">
@@ -582,6 +699,8 @@
   let currentArrayBuffer = null;
   let isPdfBook = false;
   let navMode = 'paginated';
+  let activeSelectionText = "";
+  let activeCfiRange = null;
 
   let touchStartX = 0;
   let touchStartY = 0;
@@ -600,8 +719,13 @@
     initTocDrawer();
     initSwipeHandlers();
     initProgressSlider();
+    initSelectionListeners();
     await loadReaderBook();
   });
+
+  function preventSelectionLoss(event) {
+    event.preventDefault();
+  }
 
   function initProgressSlider() {
     const slider = document.getElementById("progressSlider");
@@ -611,6 +735,7 @@
       if (isPdfBook && pdfDoc) {
         pdfCurrentPage = Math.min(Math.max(1, targetValue), pdfDoc.numPages);
         drawPdfPage(pdfCurrentPage);
+        saveCurrentProgress(pdfCurrentPage);
       } else if (rendition && bookInstance?.locations) {
         const cfi = bookInstance.locations.cfiFromLocation(targetValue - 1);
         if (cfi) rendition.display(cfi);
@@ -695,11 +820,111 @@
     }, { passive: true });
   }
 
+  function initSelectionListeners() {
+    document.addEventListener("selectionchange", checkTextSelection);
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#selectionPopover") && !e.target.closest(".header-actions")) {
+        hideSelectionPopover();
+      }
+    });
+  }
+
+  function checkTextSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.toString().trim().length > 0) {
+      activeSelectionText = sel.toString().trim();
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      showSelectionPopover(rect.left + rect.width / 2, rect.top - 10);
+    }
+  }
+
+  function showSelectionPopover(x, y) {
+    const popover = document.getElementById("selectionPopover");
+    if (!popover) return;
+    popover.style.left = `${x}px`;
+    popover.style.top = `${y}px`;
+    popover.classList.add("active");
+  }
+
+  function hideSelectionPopover() {
+    const popover = document.getElementById("selectionPopover");
+    if (popover) popover.classList.remove("active");
+  }
+
+  function handleQuickAction(type) {
+    if (!activeSelectionText) {
+      alert("Please select text in the document first.");
+      return;
+    }
+    saveSelectedText(type);
+  }
+
+  async function saveSelectedText(type) {
+    if (!activeSelectionText) return;
+
+    if (type === "quote") {
+      try {
+        const userData = typeof getUserData === "function" ? getUserData() : {};
+        userData.quotes = userData.quotes || [];
+        userData.quotes.push({
+          id: "quote_" + Date.now(),
+          bookId,
+          quote: activeSelectionText,
+          bookTitle,
+          author: bookAuthor,
+          timestamp: new Date().toISOString()
+        });
+        if (typeof saveUserData === "function") saveUserData(userData);
+        alert("Quote saved to library!");
+      } catch (err) {
+        console.error("Failed to save quote:", err);
+      } finally {
+        hideSelectionPopover();
+      }
+      return;
+    }
+
+    let userNote = "";
+    if (type === "note") {
+      userNote = prompt("Enter your note for this selection:", "") || "";
+      if (!userNote) return;
+    }
+
+    const newRecord = {
+      id: "annotation_" + Date.now(),
+      bookId,
+      type, // 'highlight', 'note'
+      text: activeSelectionText,
+      note: userNote,
+      cfi: activeCfiRange || null,
+      page: isPdfBook ? pdfCurrentPage : null,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const stored = (await localforage.getItem("userAnnotations")) || [];
+      stored.push(newRecord);
+      await localforage.setItem("userAnnotations", stored);
+      
+      if (type === 'highlight' && rendition && activeCfiRange) {
+        rendition.annotations.highlight(activeCfiRange, {}, (e) => console.log("Highlight clicked", e));
+      }
+
+      alert(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
+    } catch (e) {
+      console.error("Failed to save annotation:", e);
+    } finally {
+      hideSelectionPopover();
+    }
+  }
+
   function handleNextPage() {
     if (isPdfBook) {
       if (pdfDoc && pdfCurrentPage < pdfDoc.numPages) {
         pdfCurrentPage++;
         drawPdfPage(pdfCurrentPage);
+        saveCurrentProgress(pdfCurrentPage);
       }
     } else {
       rendition?.next();
@@ -711,6 +936,7 @@
       if (pdfDoc && pdfCurrentPage > 1) {
         pdfCurrentPage--;
         drawPdfPage(pdfCurrentPage);
+        saveCurrentProgress(pdfCurrentPage);
       }
     } else {
       rendition?.prev();
@@ -749,13 +975,29 @@
       isPdfBook = currentBook?.format?.toLowerCase() === "pdf" || isPdfMagic;
 
       if (isPdfBook) {
-        await renderPdfBook();
+        await renderPdfBook(currentBook?.lastLocation);
       } else {
-        await renderEpubBook();
+        await renderEpubBook(currentBook?.lastLocation);
       }
     } catch (error) {
       console.error("Reader initialization error:", error);
       showError(error.message || "This book could not be opened.");
+    }
+  }
+
+  async function saveCurrentProgress(locationValue) {
+    if (!bookId) return;
+    try {
+      let userData = typeof getUserData === "function" ? getUserData() : {};
+      if (userData.books) {
+        const b = userData.books.find((item) => String(item.id) === String(bookId));
+        if (b) {
+          b.lastLocation = locationValue;
+          if (typeof saveUserData === "function") saveUserData(userData);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not save location state:", e);
     }
   }
 
@@ -796,13 +1038,14 @@
     }
 
     if (isPdfBook) {
-      await renderPdfBook();
+      await renderPdfBook(pdfCurrentPage);
     } else if (bookInstance) {
-      await renderEpubBook();
+      const lastCfi = rendition?.currentLocation()?.start?.cfi;
+      await renderEpubBook(lastCfi);
     }
   }
 
-  async function renderEpubBook() {
+  async function renderEpubBook(savedCfi) {
     const viewer = document.getElementById("viewer");
     viewer.innerHTML = "";
 
@@ -812,7 +1055,6 @@
     try {
       bookInstance = ePub(currentArrayBuffer);
 
-      // Handle Continuous Infinite Scroll vs Paginated Flow Configuration
       if (navMode === 'scroll') {
         rendition = bookInstance.renderTo(viewer, {
           width: "100%",
@@ -839,8 +1081,8 @@
 
       applyEpubTypography();
 
-      // Render book and generate TOC chapters
-      await rendition.display();
+      // Display book at last saved position or start
+      await rendition.display(savedCfi || undefined);
 
       // Load TOC items into drawer
       bookInstance.loaded.navigation.then((nav) => {
@@ -864,10 +1106,25 @@
         }
       });
 
-      // Forward iframe wheel events to window for seamless scrolling across section boundaries
+      // Forward events and selection inside iframe
       rendition.hooks.content.register((contents) => {
         const doc = contents.document;
         const win = contents.window;
+
+        // Selection listener inside iframe
+        doc.addEventListener("selectionchange", () => {
+          const sel = win.getSelection();
+          if (sel && sel.toString().trim().length > 0) {
+            activeSelectionText = sel.toString().trim();
+            const range = sel.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            const iframeRect = viewer.getBoundingClientRect();
+            showSelectionPopover(
+              iframeRect.left + rect.left + rect.width / 2,
+              iframeRect.top + rect.top - 10
+            );
+          }
+        });
 
         if (win && navMode === 'scroll') {
           win.addEventListener("wheel", (e) => {
@@ -883,6 +1140,14 @@
         }
       });
 
+      rendition.on("selected", (cfiRange, contents) => {
+        activeCfiRange = cfiRange;
+        if (contents) {
+          const sel = contents.window.getSelection();
+          if (sel) activeSelectionText = sel.toString().trim();
+        }
+      });
+
       bookInstance.locations
         .generate(1000)
         .then(() => {
@@ -893,7 +1158,12 @@
         })
         .catch((error) => console.warn("Could not calculate EPUB locations:", error));
 
-      rendition.on("relocated", updateProgressText);
+      rendition.on("relocated", (location) => {
+        updateProgressText(location);
+        if (location?.start?.cfi) {
+          saveCurrentProgress(location.start.cfi);
+        }
+      });
 
     } catch (error) {
       console.error("EPUB render error:", error);
@@ -901,12 +1171,16 @@
     }
   }
 
-  async function renderPdfBook() {
+  async function renderPdfBook(savedPage) {
     const viewer = document.getElementById("viewer");
     viewer.innerHTML = `<div id="pdfContainer"></div>`;
 
     if (!pdfDoc) {
       pdfDoc = await pdfjsLib.getDocument({ data: currentArrayBuffer }).promise;
+    }
+
+    if (savedPage) {
+      pdfCurrentPage = parseInt(savedPage, 10) || 1;
     }
 
     const slider = document.getElementById("progressSlider");
@@ -932,6 +1206,7 @@
               pdfCurrentPage = pageIdx + 1;
             }
             drawPdfPage(pdfCurrentPage);
+            saveCurrentProgress(pdfCurrentPage);
             document.getElementById("tocDrawer")?.classList.remove("open");
           };
           tocList.appendChild(li);
@@ -962,11 +1237,19 @@
         await drawPdfPageToElements(i, canvas, textLayerDiv, pageWrapper, container);
       }
       
-      document.getElementById("scrollPageBadge").textContent = `1 / ${pdfDoc.numPages}`;
+      document.getElementById("scrollPageBadge").textContent = `${pdfCurrentPage} / ${pdfDoc.numPages}`;
+      
+      // Scroll to initial saved position
+      const targetElement = document.getElementById(`pdfPageWrapper_${pdfCurrentPage}`);
+      if (targetElement) {
+        targetElement.scrollIntoView();
+      }
+
       container.addEventListener("scroll", () => {
         const pageHeight = container.firstElementChild?.clientHeight || 500;
         const visiblePage = Math.min(pdfDoc.numPages, Math.floor(container.scrollTop / pageHeight) + 1);
         document.getElementById("scrollPageBadge").textContent = `${visiblePage} / ${pdfDoc.numPages}`;
+        saveCurrentProgress(visiblePage);
       });
     } else {
       const pageWrapper = document.createElement("div");
@@ -1157,7 +1440,7 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (isPdfBook) {
-        renderPdfBook();
+        renderPdfBook(pdfCurrentPage);
       } else if (rendition) {
         const viewer = document.getElementById("viewer");
         rendition.resize(viewer.clientWidth, viewer.clientHeight);
